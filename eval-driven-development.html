@@ -1027,44 +1027,42 @@
 <!-- ═══════════ MICROSOFT MAPPING ═══════════ -->
 <div class="container">
   <div class="ms-mapping">
-    <h2>How This Maps to Microsoft's Official Framework</h2>
-    <p class="intro">Microsoft's <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-checklist" style="color:var(--blue)">evaluation checklist</a> defines a 4-stage lifecycle. Our 5 stages map directly to it:</p>
+    <h2>How This Maps to Microsoft's 10-Step Eval Playbook</h2>
+    <p class="intro">Grounded in Microsoft's <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-checklist" style="color:var(--blue)">Practical Guidance on Agent Evaluation</a> — a 10-step playbook. Our 5 operational stages are the workflow over those steps:</p>
     <div class="ms-grid">
       <div class="ms-card">
-        <div class="ms-card-num" style="color:var(--purple)">Microsoft Stage 1</div>
-        <h3>Define</h3>
-        <p>Create foundational test cases with clear acceptance criteria. Translate agent scenarios into testable components.</p>
+        <div class="ms-card-num" style="color:var(--purple)">Steps 1, 4, 5</div>
+        <h3>Plan the eval effort</h3>
+        <p>Set the eval objective, classify the agent's risk tier (5 factors), name an owner; write acceptance criteria with pass-rate targets and hard/soft gates; specify human inputs.</p>
         <div class="ms-maps-to">
           <span style="background:var(--purple)">Stage 0: Discover</span>
           <span style="background:var(--blue)">Stage 1: Plan</span>
+        </div>
+      </div>
+      <div class="ms-card">
+        <div class="ms-card-num" style="color:var(--teal)">Steps 2, 3</div>
+        <h3>Build the eval sets</h3>
+        <p>Build capability eval sets (accuracy, faithfulness, relevancy, tone, tool use) and separate trust &amp; safety eval sets (guardrails, out-of-scope, sensitive-data, prompt-injection, compliance).</p>
+        <div class="ms-maps-to">
           <span style="background:var(--teal)">Stage 2: Generate</span>
         </div>
       </div>
       <div class="ms-card">
-        <div class="ms-card-num" style="color:var(--amber)">Microsoft Stage 2</div>
-        <h3>Set Baseline &amp; Iterate</h3>
-        <p>Run tests, establish quantitative baseline, enter the evaluate &rarr; analyze &rarr; improve loop.</p>
+        <div class="ms-card-num" style="color:var(--amber)">Steps 6, 7</div>
+        <h3>Baseline &amp; diagnose</h3>
+        <p>Run the baseline against the current build; diagnose every failure as either an eval-setup problem or an agent-quality problem; reach a gate-based verdict.</p>
         <div class="ms-maps-to">
           <span style="background:var(--amber)">Stage 3: Run</span>
           <span style="background:var(--red)">Stage 4: Interpret</span>
         </div>
       </div>
       <div class="ms-card">
-        <div class="ms-card-num" style="color:var(--teal)">Microsoft Stage 3</div>
-        <h3>Systematic Expansion</h3>
-        <p>Add variation, architecture, and edge-case test categories. Build comprehensive coverage: Core, Variations, Architecture, Edge cases.</p>
-        <div class="ms-maps-to">
-          <span style="background:var(--blue)">Repeat Stage 1-2</span>
-          <span style="background:var(--gray-500)">Broader categories</span>
-        </div>
-      </div>
-      <div class="ms-card">
-        <div class="ms-card-num" style="color:var(--green)">Microsoft Stage 4</div>
-        <h3>Operationalize</h3>
-        <p>Establish cadence and triggers. Core on every change, full suite weekly + before releases. Track quality signals over time.</p>
+        <div class="ms-card-num" style="color:var(--green)">Steps 8, 9, 10</div>
+        <h3>Monitor, optimize &amp; reuse</h3>
+        <p>Stand up the regression suite (regression vs gate-only), run the production optimization loop (thumbs-down &rarr; fix &rarr; re-eval), and promote reusable assets to a shared library.</p>
         <div class="ms-maps-to">
           <span style="background:var(--red)">Stage 4 ongoing</span>
-          <span style="background:var(--gray-500)">CI/CD integration</span>
+          <span style="background:var(--gray-500)">CI/CD + shared library</span>
         </div>
       </div>
     </div>

@@ -13,7 +13,7 @@ evals/
 ├── README.md              ← this file
 ├── eval-plan.md           ← the Stage 1 output applied to /eval-guide itself:
 │                            Agent Vision, ~28 acceptance criteria placed on the
-│                            Value × Cost matrix, methods, pass/fail conditions
+│                            Value × Risk matrix, methods, pass/fail conditions
 └── test-cases.json        ← the Stage 2 output: concrete test prompts + expected
                              behaviors per criterion, structured for an LLM-judge
                              or human-grader workflow

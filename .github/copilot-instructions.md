@@ -5,7 +5,7 @@ This repository is an AI agent evaluation toolkit for Copilot Studio. It provide
 ## Quick Reference
 
 - **Prompt files** are in `.github/prompts/` — attach the relevant one when helping with eval tasks
-- **Full methodology** is in `AGENTS.md` at the repo root
+- **Full methodology** is the 10-step playbook in `skills/eval-guide/playbook.md` (canonical spine); `AGENTS.md` at the repo root is the cross-tool summary
 - **Eval runner script** is at `skills/eval-guide/scripts/eval-runner.js`
 
 ## Skill Routing
@@ -21,8 +21,8 @@ This repository is an AI agent evaluation toolkit for Copilot Studio. It provide
 
 ## Key Conventions
 
-- CSV format for Copilot Studio: 3 columns — `Question`, `Expected response`, `Testing method`
-- Valid test methods: `General quality`, `Compare meaning`, `Similarity`, `Exact match`, `Keyword match`
+- CSV format for Copilot Studio import: exactly 2 columns — `Question`, `Expected response`. The testing method is assigned per row in the Copilot Studio Evaluate tab after import (not a CSV column); other methodology metadata lives in the companion `.docx` manifest
+- Valid test methods (assigned in the UI): `General quality`, `Compare meaning`, `Similarity`, `Exact match`, `Keyword match` (core five), plus `Capability use` and `Custom` (extensions)
 - Always explain reasoning — users should learn the methodology, not just receive artifacts
 - Include at least 1 adversarial/safety scenario in every eval plan
 - Group test cases by quality signal into separate CSV files

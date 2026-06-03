@@ -45,7 +45,7 @@ Eval maturity has five pillars and five levels each — from `L100 Initial` (no 
 
 | Pillar | What it covers | Today's session | Where you land |
 |---|---|---|---|
-| **1. Define what "good" means** | Agent Vision, acceptance criteria (*"The agent should…"*), Value × Cost matrix, pass/fail conditions | **Delivered (Stage 0 + Stage 1)** | L300 Systematic |
+| **1. Define what "good" means** | Agent Vision, acceptance criteria (*"The agent should…"*), Value × Risk matrix, pass/fail conditions | **Delivered (Stage 0 + Stage 1)** | L300 Systematic |
 | **2. Build your eval sets** | Test cases per acceptance criterion, CSVs ready for Copilot Studio | **Delivered (Stage 2)** | L300 Systematic |
 | **3. Run evals across the lifecycle** | When and where evals execute (offline, pre-deploy, in production) | **Starter delivered (`rerun-protocol-<agent>-<date>.docx`)** | L200 Defined |
 | **4. Improve and iterate** | Root-cause triage, failure patterns, next-action playbook | **Delivered (Stage 4 — if eval results are available)** | L300 Systematic |
@@ -84,7 +84,7 @@ Eval maturity has five pillars and five levels each — from `L100 Initial` (no 
 
 ## 5. Stage 1 — Plan *(advances Pillar 1)*
 
-**Goal:** Turn the Agent Vision into a structured eval plan — acceptance criteria with pass/fail conditions, placed on a Value × Cost-of-Failure matrix.
+**Goal:** Turn the Agent Vision into a structured eval plan — acceptance criteria with pass/fail conditions, placed on a Value × Risk matrix.
 
 ### 1.1 Confirm the architecture
 
@@ -103,7 +103,7 @@ Eval maturity has five pillars and five levels each — from `L100 Initial` (no 
 - **What you get back:** A list of acceptance criteria printed in chat. Example:
   > "The agent should return the correct PTO days for the employee's office and tenure, with a citation to the source policy."
 
-### 1.3 Place criteria on the Value × Cost-of-Failure matrix
+### 1.3 Place criteria on the Value × Risk matrix
 
 - **Goal:** Assign each criterion to one of four quadrants so effort flows to what matters most.
 - **Quadrants** (two judgments: how much VALUE does getting this right deliver? how much COST does failure cause?):
@@ -130,14 +130,14 @@ Eval maturity has five pillars and five levels each — from `L100 Initial` (no 
 
 - **What happens:** The AI launches the plan dashboard from the eval-guide plugin install. Your browser opens `plan-dashboard.html` (the file gets written next to your working directory).
 - **What you do in the browser:**
-  - **Value × Cost matrix:** Each criterion is a draggable card placed in its starting quadrant. Axis labels: *High value* / *Low value* on the left, *Low cost of failure* / *High cost of failure* above. **Drag cards between quadrants** to adjust priority. Add new criteria with the per-quadrant *"+ The agent should…"* input.
+  - **Value × Risk matrix:** Each criterion is a draggable card placed in its starting quadrant. Axis labels: *High value* / *Low value* on the left, *Low cost of failure* / *High cost of failure* above. **Drag cards between quadrants** to adjust priority. Add new criteria with the per-quadrant *"+ The agent should…"* input.
   - **Acceptance Criteria & Conditions table:** Edit each criterion inline — Statement, the **What to verify** dropdown (auto-sets method), and the explicit green **Pass =** / red **Fail =** condition textareas. Edited fields turn blue.
   - **Quality Dimensions:** Drag criterion chips between dimension groups, or add a new dimension.
   - **General Comments** box at the bottom for anything not captured by the fields above.
   - Click **Approve & Continue to Next Stage** to accept (your inline edits flow into Stage 2), or **Incorporate Changes & Generate New Plan** to send it back to the AI for another pass.
 - **What happens when you click:** Your edits go straight from the browser to the localhost dashboard server, which forwards them to the AI's terminal output and shuts down. **No download, no file to move.** The AI applies your edits and either generates the next stage (Approve) or re-launches a fresh dashboard with the changes already incorporated (Regenerate).
 - **What you get back (after Approve):**
-  - **`.docx` eval plan** (`eval-plan-<agent>-<date>.docx`) — narrative report: Agent Vision summary, Value × Cost matrix overview, quadrant assignment (visual 2×2 + grouped criterion table), quality dimensions, method mapping. For sharing and team alignment.
+  - **`.docx` eval plan** (`eval-plan-<agent>-<date>.docx`) — narrative report: Agent Vision summary, Value × Risk matrix overview, quadrant assignment (visual 2×2 + grouped criterion table), quality dimensions, method mapping. For sharing and team alignment.
 
 ## 6. Stage 2 — Generate *(advances Pillar 2)*
 
@@ -222,7 +222,7 @@ If the agent IS running:
 
 **You walk away with:**
 - `stage-0-data.json` — confirmed Agent Vision.
-- `.docx` eval plan (Stage 1) with Value × Cost matrix and acceptance criteria.
+- `.docx` eval plan (Stage 1) with Value × Risk matrix and acceptance criteria.
 - One CSV per quality signal (Stage 2): `eval-<signal>-<date>.csv` — 2 columns (Question, Expected response), one row per case. Testing method is set manually per row in Copilot Studio's Evaluate tab UI; the `eval-setup-guide-<agent>-<date>.docx` walks through that.
 - `.docx` test case report (Stage 2).
 - *If Stage 3 ran:* results CSV/JSON and `.docx` triage report (Stage 4).

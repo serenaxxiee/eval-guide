@@ -40,18 +40,19 @@ When running the full pipeline, complete each stage, show the output, explain yo
 
 ---
 
-## How This Maps to Microsoft's Official Evaluation Framework
+## How This Maps to Microsoft's 10-Step Eval Playbook
 
-Microsoft's [evaluation checklist](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-checklist) and [iterative framework](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-iterative-framework) define a 4-stage lifecycle. Our stages map directly to it — share this mapping with customers so they see how the accelerator fits the official guidance:
+The toolkit is grounded in Microsoft's ***Practical Guidance on Agent Evaluation* — a 10-step playbook** (canonical spine: `skills/eval-guide/playbook.md`). Our operational stages are the UX workflow over those steps — share this mapping with customers so they see how the accelerator fits the official guidance:
 
-| Microsoft's 4 stages | What it means | Our stages | Other eval prompts |
+| Operational stage | Playbook steps delivered | What it means | Other eval prompts |
 |---|---|---|---|
-| **Stage 1: Define** — Create foundational test cases with clear acceptance criteria | Translate agent scenarios into testable components before you even have a working agent | **Stage 0 (Discover)** + **Stage 1 (Plan)** + **Stage 2 (Generate)** | the eval-suite-planner prompt (see [eval-suite-planner](eval-suite-planner.prompt.md)), the eval-generator prompt (see [eval-generator](eval-generator.prompt.md)) |
-| **Stage 2: Baseline** — Run tests, measure, enter the evaluate→analyze→improve loop | Establish quantitative baseline, categorize failures by quality signal, iterate | **Stage 3 (Run)** + **Stage 4 (Interpret)** | the eval-result-interpreter prompt (see [eval-result-interpreter](eval-result-interpreter.prompt.md)) |
-| **Stage 3: Expand** — Add variation, architecture, and edge-case test categories | Build comprehensive suite: Core (regression), Variations (generalization), Architecture (diagnostic), Edge cases (robustness) | Repeat **Stage 1–2** with broader categories | the eval-suite-planner prompt (see [eval-suite-planner](eval-suite-planner.prompt.md)) (expansion sets) |
-| **Stage 4: Operationalize** — Establish cadence, triggers, continuous monitoring | Run core on every change, full suite weekly + before releases, track quality signals over time | **Stage 4 (Interpret)** ongoing | the eval-triage-and-improvement prompt (see [eval-triage-and-improvement](eval-triage-and-improvement.prompt.md)) |
+| **Stage 0 (Discover)** | Step 1 | Eval objective, agent risk tier (5 factors), named owner — before you even have a working agent | — |
+| **Stage 1 (Plan)** | Steps 1, 4, 5 (+ plan of 2, 3) | Acceptance criteria on the Value × Risk matrix; pass-rate targets + hard/soft gates; human inputs + source→ground-truth map | the eval-suite-planner prompt (see [eval-suite-planner](eval-suite-planner.prompt.md)) |
+| **Stage 2 (Generate)** | Steps 2, 3 (+ Step 8 design) | Build capability eval sets and separate trust & safety eval sets; tag each for the regression partition | the eval-generator prompt (see [eval-generator](eval-generator.prompt.md)) |
+| **Stage 3 (Run)** | Step 6 | Run the baseline against a live agent; record version + timestamp | — |
+| **Stage 4 (Interpret)** | Steps 7, 9 (+ Step 10 closeout) | Diagnose each failure (eval-setup vs agent-quality), gate-based verdict, design the optimization loop, flag reusable assets | the eval-result-interpreter prompt (see [eval-result-interpreter](eval-result-interpreter.prompt.md)), the eval-triage-and-improvement prompt (see [eval-triage-and-improvement](eval-triage-and-improvement.prompt.md)) |
 
-**When to share this:** After completing Stage 0, show the customer this mapping and say: *"What we're doing today covers Microsoft's Stage 1 — defining your foundational test cases. Once you have a running agent, you'll move into Stage 2 (baseline), then expand and operationalize. The checklist template helps you track progress."*
+**When to share this:** After completing Stage 0, show the customer this mapping and say: *"What we're doing today covers Steps 1–5 of the playbook — planning the eval effort and building your capability and trust & safety eval sets. Once you have a running agent, you'll run the baseline (Step 6), diagnose (Step 7), then stand up the regression suite (Step 8) and optimization loop (Step 9), and promote reusable assets (Step 10)."*
 
 **Downloadable checklist:** Point customers to the [editable checklist template](https://github.com/microsoft/PowerPnPGuidanceHub/tree/main/guidance/agentevalguidancekit) so they can track their progress through all four stages independently.
 
@@ -245,7 +246,7 @@ Before generating test cases, determine which evaluation mode fits each scenario
 
 **Explain the choice:** "I'm recommending single response eval for your knowledge-based scenarios because each question is independent — the agent doesn't need previous context to answer. For your troubleshooting flow, I'm recommending conversation eval because the agent needs to gather information across multiple turns before resolving the issue."
 
-**Note for CSV generation:** Single response test sets use the standard 3-column CSV (Question, Expected response, Testing method). Conversation test sets can be imported via spreadsheet or generated in the Copilot Studio UI — each test case contains a sequence of user messages that simulate a multi-turn interaction.
+**Note for CSV generation:** Single response test sets use the **2-column import CSV** (`Question`, `Expected response`); the testing method is assigned per row in Copilot Studio's Evaluate tab after import. Conversation test sets can be imported via spreadsheet or generated in the Copilot Studio UI — each test case contains a sequence of user messages that simulate a multi-turn interaction.
 
 ### What to do
 
@@ -263,14 +264,14 @@ Before generating test cases, determine which evaluation mode fits each scenario
 
    Only create files for categories that apply.
 
-4. **CSV format** — Copilot Studio import format:
+4. **CSV format** — Copilot Studio import format is **exactly two columns**:
 
 ```csv
-"Question","Expected response","Testing method"
-"How many PTO days do LA employees get?","LA employees receive 18 PTO days per year.","Compare meaning"
+"Question","Expected response"
+"How many PTO days do LA employees get?","LA employees receive 18 PTO days per year."
 ```
 
-Valid Testing method values: `General quality`, `Compare meaning`, `Similarity`, `Exact match`, `Keyword match`.
+The **Testing method is NOT a CSV column** — it is assigned per row in Copilot Studio's Evaluate tab after import; the method chosen per criterion travels in the companion `.docx` manifest / `eval-setup-guide.docx`. Valid Testing method values (assigned in the UI): `General quality`, `Compare meaning`, `Similarity`, `Exact match`, `Keyword match` (core five), plus `Capability use` and `Custom` (extensions).
 
 5. **Test method per scenario type:**
 

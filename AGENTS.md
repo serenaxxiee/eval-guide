@@ -1,6 +1,6 @@
 # Eval Guide — AI Agent Evaluation Toolkit
 
-This repository contains an AI agent evaluation toolkit for [Copilot Studio](https://copilotstudio.microsoft.com), grounded in Microsoft's official evaluation framework.
+This repository contains an AI agent evaluation toolkit for [Copilot Studio](https://copilotstudio.microsoft.com), grounded in Microsoft's ***Practical Guidance on Agent Evaluation* — a 10-step playbook**. The canonical methodology spine is `skills/eval-guide/playbook.md`.
 
 ## What This Toolkit Does
 
@@ -33,19 +33,29 @@ This toolkit provides 6 prompt files in `.github/prompts/`. When the user's requ
 
 ## Methodology Summary
 
-This toolkit encodes Microsoft's 4-stage evaluation lifecycle:
+This toolkit is grounded in Microsoft's ***Practical Guidance on Agent Evaluation* — a 10-step playbook**. The canonical methodology spine lives in `skills/eval-guide/playbook.md`; every skill, prompt, dashboard, and doc derives its framing from that file. Do not restate the methodology elsewhere — point to the playbook.
 
-1. **Define** — Establish purpose, scope, quality signals, success criteria
-2. **Set Baseline & Iterate** — Run evals, establish baseline, iterate on the agent
-3. **Systematic Expansion** — Expand coverage across 11 validation themes
-4. **Operationalize** — Integrate into CI/CD, production monitoring
+The 10 steps:
+
+1. **Plan the eval effort** — eval objective, agent **risk tier** (5 factors: reach, criticality of error, autonomy/blast radius, regulatory exposure, data sensitivity), named owner
+2. **Build the capability eval sets** — one set per capability (accuracy, faithfulness/groundedness [hallucination lives here], relevancy, style/tone, reasoning/tool use)
+3. **Build the trust & safety eval sets** — separate from capability: guardrails, out-of-scope, sensitive-data, prompt-injection/jailbreak, compliance
+4. **Define pass-rate targets and gates** — per set; **hard gates** (block deploy) vs **soft targets** (tracked)
+5. **Specify human inputs** — rubrics, ground truths, golden answers + a source-to-ground-truth dependency map
+6. **Run the baseline** — full suite vs current build, recorded with version + timestamp
+7. **Iterate to diagnose failures** — every failure is an eval-setup problem OR an agent-quality problem
+8. **Regression suite** — partition into regression sets (cadence) vs gate-only sets (milestones)
+9. **Optimization loop** — production signals (thumbs-down highest) → cluster → fix → re-evaluate
+10. **Identify & save reusable assets** — promote non-agent-specific sets/rubrics to a shared library (Required / Recommended / Opt-in)
+
+The operational stages the toolkit walks a customer through — **Discover, Plan, Generate, Run, Interpret** — are the UX workflow over these steps (Discover=Step 1; Plan=Steps 1,4,5; Generate=Steps 2,3 + Step 8 design; Run=Step 6; Interpret=Steps 7,9 + Step 10 closeout). The **Per-Agent Eval Maturity Model** (5 pillars × 5 levels) in `maturity-model.md` is the outcome scorecard. See the canonical crosswalk in `playbook.md`.
 
 ### Architecture-Aware Scoping
 
 | Architecture | What Gets Tested |
 |---|---|
-| **Prompt-level** (simple Q&A) | Response quality, tone, boundaries, refusal |
-| **RAG / Knowledge-grounded** | + retrieval accuracy, grounding, hallucination prevention |
+| **Prompt-level** (simple Q&A) | Response quality, tone, trust & safety refusals |
+| **RAG / Knowledge-grounded** | + retrieval accuracy, grounding/faithfulness, hallucination prevention |
 | **Agentic** (tool use, orchestration) | + tool selection, action correctness, error recovery |
 
 ### Key Sources
@@ -62,6 +72,6 @@ This toolkit encodes Microsoft's 4-stage evaluation lifecycle:
 ## Output Formats
 
 The toolkit generates:
-- **CSV files** — Importable directly into Copilot Studio's Evaluation tab (3 columns: Question, Expected response, Testing method)
-- **Report documents** — Eval plans, test case summaries, triage reports
+- **CSV files** — Importable directly into Copilot Studio's Evaluation tab. **Exactly 2 columns: `Question`, `Expected response`** (one row per case). The testing method is assigned per row in Copilot Studio's Evaluate tab after import; all other methodology metadata (set type, category, gate, target, provenance) travels in the companion `.docx` manifest, not the CSV.
+- **Report documents** — Eval plans, test case summaries (with the per-case manifest), triage reports
 - **Conversation blueprints** — Multi-turn dialogue test structures

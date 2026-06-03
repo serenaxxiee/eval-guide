@@ -1,7 +1,7 @@
-<!-- Stage 1: Plan — Eval Plan Review (Value × Cost-of-Failure matrix) -->
+<!-- Stage 1: Plan — Eval Plan Review (Value × Risk matrix) -->
 
 <style>
-/* Value × Cost matrix — 2x2 drag-and-drop */
+/* Value × Risk matrix — 2x2 drag-and-drop */
 .matrix-intro {
   font-size: 0.85rem;
   color: var(--text);
@@ -296,7 +296,7 @@
 .dim-bar-add:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 
-<!-- Section 1: Value × Cost matrix -->
+<!-- Section 1: Value × Risk matrix -->
 <div class="section">
   <div class="section-header"><span data-tooltip="Each acceptance criterion belongs in one quadrant based on (a) the VALUE of getting it right and (b) the RISK if it fails. Drag cards between quadrants. Pass/fail for each test case lives in each criterion's own pass/fail conditions — not a prescribed percentage threshold.">Value × Risk Matrix</span></div>
   <div class="section-body">
@@ -510,7 +510,7 @@ function renderAll() {
   renderDimensions();
 }
 
-// ── Value × Cost matrix (drag-and-drop) ──
+// ── Value × Risk matrix (drag-and-drop) ──
 
 function renderQuadrants() {
   const totalActive = criteria.filter(c => !c._deleted).length;
