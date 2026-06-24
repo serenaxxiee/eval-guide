@@ -25,7 +25,7 @@ Use this topic-to-URL routing table to decide what to fetch. Fetch FIRST, then a
 | Agent profile template, defining agent scope for eval | `https://github.com/microsoft/ai-agent-eval-scenario-library` | resources/agent-profile-template.yaml | Agent profile definition for scoping evals |
 | Score interpretation, what scores mean, risk tier-based thresholds, hard/soft gates, readiness decisions, SHIP/ITERATE/BLOCK | `https://github.com/microsoft/triage-and-improvement-playbook` | Layer 1: Score Interpretation, readiness decision tree | Supporting source for Step 4/6/7 readiness decisions |
 | Failure triage, debugging eval failures, root cause analysis, diagnostic questions | `https://github.com/microsoft/triage-and-improvement-playbook` | Layer 2: Failure Triage, 26 diagnostic questions | 5-question eval verification, 7 eval setup failure sub-types |
-| Remediation, fixing failures, instruction budget, actions per quality signal | `https://github.com/microsoft/triage-and-improvement-playbook` | Layer 3: Remediation Mapping | Actions mapped to quality signals |
+| Remediation, fixing failures, instruction budget, actions per failure pattern | `https://github.com/microsoft/triage-and-improvement-playbook` | Layer 3: Remediation Mapping | Actions mapped to failure patterns |
 | Pattern analysis, cross-signal patterns, trend analysis, concentration analysis | `https://github.com/microsoft/triage-and-improvement-playbook` | Layer 4: Pattern Analysis | 7 cross-signal patterns, trend analysis |
 | Root cause types, eval-setup problem vs agent-quality problem, eval setup issue vs agent config vs platform limitation | `https://github.com/microsoft/triage-and-improvement-playbook` | Root Cause Types section | Supporting taxonomy mapped to Step 7's two root buckets |
 | Non-determinism handling, run variance, flaky results | `https://github.com/microsoft/triage-and-improvement-playbook` | Non-determinism section | 3 runs minimum, +/-5% normal, +/-10% investigate |
@@ -36,7 +36,7 @@ Use this topic-to-URL routing table to decide what to fetch. Fetch FIRST, then a
 | Test set creation, building eval datasets in Copilot Studio | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/analytics-agent-evaluation-create` | Test set creation methods | Generate, import, or manually write test cases |
 | Test set editing, user profiles, connections, modifying test methods | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/analytics-agent-evaluation-edit` | Manage user profiles and connections, edit test methods | Multi-profile eval for simulating different users; GCC limitations |
 | Running evals, viewing results, test results interpretation | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/analytics-agent-evaluation-results` | Run tests and view results | 89-day result retention; export results immediately |
-| Agent evaluation overview, why use automated testing, test chat vs eval | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/analytics-agent-evaluation-intro` | About agent evaluation | GCC limitations: no user profiles, no Similarity method |
+| Agent evaluation overview, why use automated testing, test chat vs eval | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/analytics-agent-evaluation-intro` | About agent evaluation | GCC limitations: no user profiles, no Text similarity method |
 | Rubric refinement workflow, aligning AI grading with human judgment | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/kit-rubrics-refinement-workflow` | 8-step workflow: Run, Review, Grade, Refine, Save, Re-run, Repeat | Alignment matrix, Standard vs Full refinement views, example marking |
 | Rubric best practices, tips for rubric refinement | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/kit-rubrics-best-practices` | Best practices for refinement | Quality over quantity for examples; don't chase 100% alignment |
 | Rubric reference guide, grade definitions, rubric structure | `https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/kit-rubrics-reference` | Rubrics reference | Grade scale definitions, rubric components |
@@ -67,7 +67,7 @@ Synthesize the fetched content with the knowledge base below. The 10-step playbo
 - Answer in 3-5 sentences maximum. No padding, no preamble, no "great question."
 - Give opinionated, direct guidance. Never say "it depends" without immediately resolving it with a concrete recommendation.
 - Use specific numbers ("start with 20-50 cases", "flag cases with <60% agreement", "run 3 trials per case").
-- Do not ask clarifying questions. Make a reasonable assumption and answer.
+- Ask at most one targeted clarifying question only when the answer would materially change by agent architecture, risk tier, or lifecycle stage; otherwise make a reasonable assumption and answer.
 - Cite which source you used at the end of the answer.
 
 ---
@@ -93,12 +93,11 @@ The core methodology is `skills/eval-guide/playbook.md`: **Practical Guidance on
 
 **Supporting MS Learn lifecycle source:** The MS Learn iterative framework is still useful for lifecycle/cadence questions and maps into the playbook, but it is no longer the canonical methodology for this toolkit.
 
-### Risk tier, Value × Risk, gates, and manifest
+### Risk tier, gates, workbook, and manifest
 
 - **Risk tier** is agent-level and uses five factors: reach, criticality of error, autonomy/blast radius, regulatory exposure, and data sensitivity. It drives targets, gate strictness, required trust & safety coverage, and human-review needs.
-- **Value × Risk quadrant** is per criterion and only prioritizes case count/allocation; it is not the agent-level risk tier and does not define gates.
 - **Hard gate** means must pass before deploy; **soft target** means tracked but non-blocking.
-- Prefer the **manifest** over inference: set_type, category, method, gate, target, regression class, human-review flag, and source/ground-truth provenance live in the companion `.docx` report and `stage-N-data.json`, not in the Copilot Studio import CSV.
+- Prefer the **workbook/manifest** over inference: set type, category, method, gate, target, intended use, cadence, human-review inputs, source dependencies, grader-validation notes, and reusable-asset flags live in the Eval Suite Template workbook and manifest, not in the Copilot Studio import CSV.
 
 ### Step 9 optimization loop and Step 10 reusable assets
 
@@ -122,9 +121,9 @@ Per Microsoft's Eval Scenario Library, scenarios divide into two categories:
 
 **Anti-pattern:** Skewing your dataset 80%+ toward happy-path cases. Per the Scenario Library, balance across business-problem and capability scenarios for meaningful coverage. Target roughly 50% happy-path, 30% edge cases, 20% adversarial.
 
-### Quality signals
+### Source-library quality dimensions
 
-Per Microsoft's Eval Scenario Library, five quality signals define agent quality:
+Microsoft's Eval Scenario Library includes five reusable quality dimensions that can inform eval-set design, but the toolkit records them as workbook registry rows rather than treating them as the primary planning artifact:
 
 1. **Policy Accuracy** — Does the agent follow business rules and policies correctly?
 2. **Source Attribution** — Does the agent ground claims in retrieved documents and cite them?
@@ -132,7 +131,7 @@ Per Microsoft's Eval Scenario Library, five quality signals define agent quality
 4. **Action Enablement** — Does the agent empower users to take the next step?
 5. **Privacy Protection** — Does the agent avoid exposing sensitive information?
 
-Each quality signal maps to specific evaluation methods (Keyword Match, Compare Meaning, Capability Use, General Quality) via the method mapping tables in the Scenario Library.
+Each dimension can map to methods such as Keyword Match, Compare Meaning, Capability Use, or General Quality, but the selected method and governance belongs to the eval set in the workbook registry.
 
 ### 7 test methods (Copilot Studio)
 
@@ -158,14 +157,14 @@ Per MS Learn (common-evaluation-approaches), three approaches for generating tes
 
 Per the Triage Playbook, score interpretation follows a 4-layer framework:
 
-**Layer 1 — Score Interpretation:** Apply risk tier-based thresholds, manifest gates, and the readiness decision tree:
-- **SHIP** — Scores meet thresholds across all quality signals.
-- **ITERATE** — Some signals below threshold; targeted fixes needed.
+**Layer 1 — Score Interpretation:** Apply risk tier, workbook-defined gates, grader-validation caveats, and the readiness decision tree:
+- **SHIP** — All hard gates pass, soft targets are acceptable, and the owner accepts any residual risk.
+- **ITERATE** — Some eval sets miss soft targets or show regressions; targeted fixes needed.
 - **BLOCK** — A hard gate fails, especially trust & safety; do not ship regardless of aggregate pass rate.
 
 **Layer 2 — Failure Triage:** When scores are low, run the 5-question eval verification first (is the eval itself correct?) before blaming the agent. Then apply 26 diagnostic questions across 6 domains to identify the root cause. Seven eval setup failure sub-types cover common grader/dataset bugs.
 
-**Layer 3 — Remediation Mapping:** Each quality signal has specific remediation actions. Watch for the instruction budget problem — adding instructions to fix one signal can degrade another.
+**Layer 3 — Remediation Mapping:** Each failed eval set should map to a specific fix location. Watch for the instruction budget problem — adding instructions to fix one failure pattern can degrade another.
 
 **Layer 4 — Pattern Analysis:** Look for concentration (failures clustered in specific scenario types), cross-signal correlations (7 documented cross-signal patterns), and trends over time.
 
@@ -282,7 +281,7 @@ The evaluation approach differs significantly based on agent complexity:
 |---|---|---|
 | **Primary metric** | Response accuracy (Compare Meaning, General Quality) | Task completion — did the end-to-end job get done? |
 | **Grading unit** | Single turn: one input, one output | Conversation or trajectory: full sequence of steps |
-| **Key quality signals** | Source Attribution, Policy Accuracy | Action Enablement, Tool Invocations (Capability Use), plus all Q&A signals |
+| **Key eval-set focus** | Grounded answers and policy accuracy | Action enablement, tool invocation, and Q&A correctness |
 | **Test method mix** | Heavy on Compare Meaning + General Quality | Add Capability Use for tool calls, Keyword Match for intermediate checkpoints |
 | **Failure modes to watch** | Wrong answer, hallucination, refusal | Compounding errors, wrong tool selection, unnecessary steps, partial completion |
 | **Edge cases** | Ambiguous queries, out-of-scope questions | Mid-workflow failures, tool timeouts, user corrections mid-conversation |
@@ -319,7 +318,7 @@ When building LLM judges from scratch, use the 7-step Critique Shadowing methodo
 
 ### Knowledge grounding (for RAG agents)
 
-Per the Eval Scenario Library's Knowledge Grounding capability scenario and the Source Attribution quality signal:
+Per the Eval Scenario Library's Knowledge Grounding guidance:
 
 - Knowledge grounding score measures whether each factual claim is supported by retrieved context.
 - A 75% grounding score means roughly 1 in 4 claims may not be traceable to documents. Set threshold at 90%+ for high-stakes factual tasks.
@@ -370,7 +369,7 @@ After answering the question, check whether the user would benefit from running 
 
 | If the question involves... | Suggest this skill | One-liner to append |
 |---|---|---|
-| Creating an eval plan, scoping what to evaluate, choosing scenarios | `/eval-suite-planner` | "For a full eval plan with scenario selection and quality signals, run `/eval-suite-planner`." |
+| Creating an eval plan or scoping what to evaluate | `/eval-suite-planner` | "For a populated Eval Suite Template workbook, run `/eval-suite-planner`." |
 | Generating test cases, writing CSV datasets, building eval sets | `/eval-generator` | "To generate ready-to-import test case CSVs, run `/eval-generator`." |
 | Interpreting scores, reading results, understanding pass rates | `/eval-result-interpreter` | "To interpret a specific set of eval results, paste them into `/eval-result-interpreter`." |
 | Debugging failures, triaging low scores, root cause analysis, remediation | `/eval-triage-and-improvement` | "To triage specific failures with the full diagnostic framework, run `/eval-triage-and-improvement`." |
@@ -412,7 +411,7 @@ After answering the question, check whether the user would benefit from running 
 /eval-faq How is evaluating a multi-step workflow different from a simple Q&A agent?
 /eval-faq What does 0% pass@100 mean — is my agent broken?
 /eval-faq How do I avoid LLM judge bias in my grader?
-/eval-faq What are the 5 quality signals I should evaluate?
+/eval-faq Which eval sets should I include?
 /eval-faq What is the Probe-Measure-Harden red-teaming framework?
 /eval-faq What are the 7 test methods in Copilot Studio?
 /eval-faq How do I use the Triage Playbook to debug failing scores?

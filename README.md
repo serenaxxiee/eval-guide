@@ -24,7 +24,7 @@ npx skills add microsoft/eval-guide
 | Skill | Command | What it does |
 |-------|---------|-------------|
 | **Eval Guide** | `/eval-guide` | Full eval lifecycle — discover, plan, generate, run, interpret. Start here. |
-| **Eval Suite Planner** | `/eval-suite-planner` | Structured eval plan with scenarios, methods, quality signals, thresholds, and test data strategy |
+| **Eval Suite Planner** | `/eval-suite-planner` | Populated Eval Suite Template workbook plus an interactive HTML review page for eval sets, methods, gates, human inputs, and grader-validation notes |
 | **Eval Generator** | `/eval-generator` | Test cases for single-response and conversation (multi-turn) evaluation modes |
 | **Eval Result Interpreter** | `/eval-result-interpreter` | SHIP / ITERATE / BLOCK verdict with root cause classification |
 | **Eval Triage & Improvement** | `/eval-triage-and-improvement` | Interactive diagnosis and remediation for failing evals |
@@ -63,8 +63,8 @@ Stage complete → Dashboard opens → You review & edit → Confirm → Final a
 | Stage | What you review in the dashboard | What you can edit |
 |---|---|---|
 | **0. Discover** | Agent Vision (purpose, users, knowledge, capabilities, boundaries, success criteria) | All fields inline, add/remove list items |
-| **1. Plan** | Scenario table, methods, thresholds, quality signals | Add/remove scenarios, change methods, adjust thresholds |
-| **2. Generate** | Test cases per quality signal | Edit expected responses, questions, methods, add/remove cases |
+| **1. Plan** | Populated Eval Suite Template workbook plus HTML review page | Edit workbook cells without changing template structure; use the page to review summary, filters, TBDs, and checklist |
+| **2. Generate** | Test cases per eval set | Edit expected responses, questions, methods, add/remove cases |
 | **4. Interpret** | Verdict, failure triage, root causes, actions | Reclassify root causes, add comments |
 
 Final deliverables (`.docx` reports, `.csv` test sets) are only generated **after you confirm** via the dashboard.
@@ -108,11 +108,11 @@ Most agents benefit from a hybrid: Echo for fast regression, Synthesized persona
 
 | Skill | Artifacts |
 |-------|-----------|
-| `/eval-guide` | Interactive dashboards at each stage, Agent Vision doc, eval plan (.docx), test case CSVs, triage report (.docx) |
-| `/eval-suite-planner` | Eval plan table with scenarios, methods, thresholds, test data strategy, priority order (.docx + .xlsx) |
+| `/eval-guide` | Workbook review plus Generate/Interpret dashboards, populated eval-suite workbook (.xlsx), test case CSVs, triage report (.docx) |
+| `/eval-suite-planner` | Populated Eval Suite Template workbook plus interactive HTML review page with registry, gates, TBDs, baseline placeholders, and reusable candidates |
 | `/eval-generator` | Copilot Studio-importable CSV (single-response) or conversation blueprint + .docx report |
 | `/eval-result-interpreter` | SHIP/ITERATE/BLOCK verdict with root cause analysis and pattern detection |
-| `/eval-triage-and-improvement` | Interactive remediation guidance with specific fixes per quality signal |
+| `/eval-triage-and-improvement` | Interactive remediation guidance with specific fixes per eval-set failure pattern |
 | `/eval-faq` | Answers grounded in MS Learn, Eval Scenario Library, Triage Playbook |
 
 ## Enhanced experience with Copilot Studio plugin (Claude Code)
@@ -213,7 +213,7 @@ This toolkit is grounded in Microsoft's ***Practical Guidance on Agent Evaluatio
 - **[Triage & Improvement Playbook](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-iterative-framework)** — root cause classification (eval-setup vs agent-quality)
 - **[Common Evaluation Approaches](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/common-evaluation-approaches)** — Echo, Historical Replay, Synthesized Personas; code-based vs LLM-judge graders
 - **[Evaluation Frameworks](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/evaluation-frameworks)** — scenario validation themes
-- **MS Learn agent evaluation docs** — test methods, quality signals, comparative testing, rubric-based grading
+- **MS Learn agent evaluation docs** — test methods, comparative testing, rubric-based grading
 
 ## Contributing
 

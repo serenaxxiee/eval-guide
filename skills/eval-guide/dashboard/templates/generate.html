@@ -469,14 +469,14 @@
 <!-- ── Eval Sets Overview ──────────────────────────────────────── -->
 <div class="section eval-overview">
   <div class="section-header flex-between">
-    <span data-tooltip="Live overview of every quality signal you'll generate test cases for. Edits below (adding cases, changing methods) update this table in real time. Use it to verify coverage before approving.">Eval Sets Overview</span>
+    <span data-tooltip="Live overview of every eval set you'll generate test cases for. Edits below (adding cases, changing methods) update this table in real time. Use it to verify coverage before approving.">Eval Sets Overview</span>
     <span class="text-sm text-muted" id="total-count"></span>
   </div>
   <div class="section-body" style="padding:0;">
     <table>
       <thead>
         <tr>
-          <th>Quality Signal</th>
+          <th>Eval Set</th>
           <th style="width:6.5rem; text-align:right;">Test Cases</th>
           <th>Test Methods</th>
           <th style="width:11rem; text-align:right;">Priority Level</th>
@@ -492,10 +492,10 @@
 
 <script>
 const QUADRANT_LABELS = {
-  critical: "High Value · High Risk",
-  valuable: "High Value · Low Risk",
-  guardrails: "Low Value · High Risk",
-  deprioritize: "Low Value · Low Risk",
+  critical: "Critical capability / gate",
+  valuable: "Capability coverage",
+  guardrails: "Trust & Safety gate",
+  deprioritize: "Exploratory coverage",
   mixed: "Mixed",
 };
 const Q_TAG_CSS = {

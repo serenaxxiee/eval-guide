@@ -22,8 +22,9 @@ This repository is an AI agent evaluation toolkit for Copilot Studio. It provide
 ## Key Conventions
 
 - CSV format for Copilot Studio import: exactly 2 columns — `Question`, `Expected response`. The testing method is assigned per row in the Copilot Studio Evaluate tab after import (not a CSV column); other methodology metadata lives in the companion `.docx` manifest
-- Valid test methods (assigned in the UI): `General quality`, `Compare meaning`, `Similarity`, `Exact match`, `Keyword match` (core five), plus `Capability use` and `Custom` (extensions)
+- Valid test methods (assigned in the UI): `General quality`, `Compare meaning`, `Text similarity`, `Exact match`, `Keyword match` (core five), plus `Capability use` and `Custom` (extensions)
 - Always explain reasoning — users should learn the methodology, not just receive artifacts
-- Include at least 1 adversarial/safety scenario in every eval plan
-- Group test cases by quality signal into separate CSV files
+- For planner output, prefer the interactive HTML review page over long chat summaries; keep chat to artifact paths and blockers
+- Include at least 1 adversarial/safety eval set or case in every eval plan
+- Group test cases by eval set into separate CSV files
 - Stages 0-2 (Discover, Plan, Generate) work without a running agent

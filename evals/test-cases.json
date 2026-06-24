@@ -41,7 +41,7 @@
       "quality_signal": "Triggers",
       "quadrant": "guardrails",
       "method": "Capability use",
-      "trigger_input": "We've got an eval suite running on cadence and the latest run came back with 60% pass on High Value · High Risk. Help me figure out what's broken.",
+      "trigger_input": "We've got an eval suite running on cadence and the latest run came back with a failed prompt-injection hard gate. Help me figure out what's broken.",
       "expected_behavior": "Skill recognizes mature-eval-suite signal and routes to /eval-triage-and-improvement (or /eval-result-interpreter). Does NOT start Stage 0.",
       "pass_conditions": [
         "AI response names `/eval-triage-and-improvement` or `/eval-result-interpreter` as the right skill",
@@ -183,21 +183,23 @@
       "quality_signal": "Plan Quality",
       "quadrant": "critical",
       "method": "Capability use + Compare meaning",
-      "trigger_input": "[After Stage 0 of the HR bot scenario from T-C-01a, proceed to Stage 1.] Walk through Stage 1 Plan and produce the criteria.",
-      "expected_behavior": "Stage 1 produces 10–15 criteria. Each starts with 'The agent should…'. Each has quadrant + method + pass_condition + fail_condition. Distribution sanity-checks against HIGH-risk targets.",
+      "trigger_input": "[After Stage 0 of the HR bot scenario from T-C-01a, proceed to Stage 1.] Produce the Plan artifacts.",
+      "expected_behavior": "Stage 1 produces a populated Eval Suite Template workbook plus `eval-suite-<agent>-<date>-review.html`. The HTML page carries the summary, filters, TBDs, and review checklist so the chat response stays path-focused.",
       "pass_conditions": [
-        "Criteria count is 10–15",
-        "Every criterion phrased as 'The agent should X' or 'The agent should NOT X'",
-        "Every criterion has all four fields (quadrant, method, pass_condition, fail_condition) explicitly named",
-        "Distribution roughly matches HIGH-risk targets (High Value · High Risk 25–40%, Low Value · High Risk 30–50%)"
+        "Workbook is a populated copy of the blank template with no sheet, column, header, dropdown, README, style, or validation changes",
+        "`2 . Eval Suite Registry` has one row per eval set, not one row per test case",
+        "Workbook registry includes required high-risk coverage: capability sets, Trust & Safety gates, owners, source dependencies, and grader-validation notes",
+        "HTML review page exists and includes summary cards, eval-set filters, a TBD action list, and persisted review checklist",
+        "Final chat response provides artifact paths and blockers only, not the full workbook summary/checklist"
       ],
       "fail_conditions": [
-        "< 10 or > 15 criteria",
-        "Any criterion phrased as a goal/value ('agent should be helpful', 'tone should be welcoming') without observable behavior",
-        "Any criterion missing quadrant / method / pass_condition / fail_condition",
-        "Distribution off (e.g., < 30% Low Value · High Risk for HIGH-risk)"
+        "Workbook registry is missing required high-risk coverage (for example, no Trust & Safety hard gates or no accountable owner)",
+        "Workbook is recreated or redesigned instead of populated from the template",
+        "Registry rows are per individual test case instead of per eval set",
+        "HTML review page is missing or lacks the required interactive review sections",
+        "Response dumps a long narrative summary/checklist into chat after artifact generation"
       ],
-      "notes": "Multi-method test: Capability use checks structural completeness; Compare meaning checks the behavior-led phrasing rule."
+      "notes": "Multi-method test: Capability use checks artifact creation and template preservation; Compare meaning checks that the HTML page replaces long chat output."
     },
     {
       "id": "T-C-03",
@@ -246,7 +248,7 @@
       "quadrant": "guardrails",
       "method": "Keyword match (negative)",
       "trigger_input": "[Anywhere in Stage 1 output.]",
-      "expected_behavior": "Output uses ONLY the canonical quadrant names: High Value · High Risk, High Value · Low Risk, Low Value · High Risk, Low Value · Low Risk.",
+      "expected_behavior": "Output uses the Eval Suite Template workbook as the canonical Plan artifact, preserving existing tabs, headers, dropdown lists, formulas, validations, and styles.",
       "pass_conditions": [
         "All four canonical names appear in the matrix and criterion table",
         "The string 'Core' does NOT appear as a quadrant name (it can appear in 'Core Capabilities' Vision context — that's a different use)"
@@ -272,7 +274,7 @@
         "Ship-readiness thresholds (when discussed in Stage 4) are per-quadrant aggregates, not per-criterion"
       ],
       "fail_conditions": [
-        "Output says 'High Value · High Risk criteria must pass at 90%'",
+        "Output says individual cases define deployment thresholds instead of workbook eval-set gates",
         "Pass conditions framed as percentages",
         "Quadrant and threshold conflated"
       ],
@@ -305,15 +307,15 @@
       "quality_signal": "Plan Quality",
       "quadrant": "guardrails",
       "method": "Custom rubric",
-      "trigger_input": "[After Stage 1 produces a plan with risk_profile = HIGH and only 15% Low Value · High Risk criteria.] Verify the distribution sanity-check.",
-      "expected_behavior": "Skill auto-detects the violation: HIGH-risk requires 30–50% Low Value · High Risk, plan has 15%. Skill pushes back: 'This distribution looks off — only 15% Low Value · High Risk for HIGH risk. Want me to suggest a rebalance?'",
+      "trigger_input": "[After Plan produces a HIGH-risk workbook with no Trust & Safety hard-gate rows.] Verify the coverage sanity-check.",
+      "expected_behavior": "Skill auto-detects the violation: HIGH-risk plans require explicit Trust & Safety gate rows and owner/reviewer fields. Skill pushes back or marks required fields as `TBD - confirm before baseline` instead of silently locking the workbook.",
       "pass_conditions": [
         "Skill flags the distribution violation",
-        "Skill names the specific shortfall (Low Value · High Risk % vs. target)",
+        "Skill names the specific shortfall (missing Trust & Safety hard-gate rows and/or owner/reviewer fields)",
         "Skill offers a rebalance"
       ],
       "fail_conditions": [
-        "Plan locks with 15% Low Value · High Risk on a HIGH-risk agent without pushback",
+        "Plan locks a HIGH-risk workbook with no Trust & Safety hard-gate rows without pushback",
         "Skill flags the issue too late (after deliverables generated)",
         "Skill flags wrong threshold"
       ],
@@ -326,9 +328,9 @@
       "quadrant": "guardrails",
       "method": "Capability use",
       "trigger_input": "[Stage 1 for the HR bot from T-C-01a with risk_profile = HIGH and HR + employee data keywords.]",
-      "expected_behavior": "Skill auto-doubles the adversarial mandate from 1 to 2 Low Value · High Risk red-team criteria. Narrates the trigger: 'Your agent matches the sensitive-data trigger (HIGH risk + HR data) — doubling the Low Value · High Risk mandate from 1 to 2 minimum.'",
+      "expected_behavior": "Skill adds explicit adversarial / red-team Trust & Safety eval sets for sensitive-data agents. Narrates the trigger: 'Your agent matches the sensitive-data trigger (HIGH risk + HR data), so I'm adding hard-gated sensitive-data and prompt-injection coverage.'",
       "pass_conditions": [
-        "≥ 2 explicit adversarial / red-team criteria in Low Value · High Risk quadrant",
+        "Explicit adversarial / red-team Trust & Safety eval sets with hard-gate governance",
         "Skill narrates the auto-double trigger and the rationale",
         "Adversarial criteria target real boundary risks (privacy probe, jailbreak)"
       ],
@@ -377,7 +379,7 @@
         "No narration about the [VERIFY] discipline",
         "Reference-free methods incorrectly populate Expected Response"
       ],
-      "notes": "Spot-check 5+ sample test cases per quality signal. The discipline must be uniform — even one missed [VERIFY] is a fail."
+      "notes": "Spot-check 5+ sample test cases per eval set. The discipline must be uniform — even one missed [VERIFY] is a fail."
     },
     {
       "id": "T-C-07",
@@ -406,7 +408,7 @@
       "quadrant": "valuable",
       "method": "Capability use",
       "trigger_input": "[Stage 2 generates CSVs. Inspect the file outputs.]",
-      "expected_behavior": "For each quality signal, two CSV variants exist: `eval-<signal>-<date>-for-import.csv` (2 columns: Question, Expected response) and `eval-<signal>-<date>-with-methods.csv` (3 columns: Question, Expected response, Testing method).",
+      "expected_behavior": "For each eval set, an import CSV exists: `eval-<set-type>-<set-slug>-<date>.csv` with 2 columns: Question, Expected response. Method and governance metadata stay in the workbook/manifest, not in the CSV.",
       "pass_conditions": [
         "Two CSVs per signal with the correct suffixes",
         "-for-import has exactly 2 columns",
@@ -446,8 +448,8 @@
       "quality_signal": "Skill Integrity",
       "quadrant": "critical",
       "method": "Custom rubric",
-      "trigger_input": "[Stage 1 dashboard. Customer makes 5 edits and clicks Approve & Continue: (1) drags criterion #6 from High Value · Low Risk to High Value · High Risk, (2) renames dimension 'Benefits Accuracy' → 'Accuracy' (merging with existing Accuracy group), (3) deletes dimension 'Tone' (criteria reassign), (4) edits criterion #4's pass condition to add a citation requirement, (5) adds a new criterion in Low Value · High Risk. plan-feedback.json now has all five edits.]",
-      "expected_behavior": "AI reads plan-feedback.json and applies every edit. Narrates the five changes back: 'Got it — moved #6 to High Value · High Risk, merged Benefits Accuracy into Accuracy, deleted Tone (3 criteria reassigned to next dimension), edited #4's pass condition, added new Low Value · High Risk criterion #16. Updated distribution: ...' Then proceeds to deliverable generation. Does NOT ask 'are you sure about deleting Tone?' / 'want to revert the merge?' / 'should we rebalance?'",
+      "trigger_input": "[Plan workbook review. Customer makes 5 edits and confirms: (1) changes CAP-ACC-001 cadence to weekly, (2) marks TS-PII-001 as a hard gate, (3) adds a source owner, (4) edits grader-validation notes, (5) adds a reusable prompt-injection candidate. The workbook feedback has all five edits.]",
+      "expected_behavior": "AI applies every edit. Narrates the five changes back: 'Got it — changed CAP-ACC-001 cadence to weekly, marked TS-PII-001 as a hard gate, added the source owner, updated grader-validation notes, and added the reusable prompt-injection candidate.' Then proceeds to deliverable generation. Does NOT ask 'are you sure?' / 'want to revert?' / 'should we rebalance?'",
       "pass_conditions": [
         "All 5 edits visible in the in-memory plan and the generated .docx / .xlsx",
         "Narration names every distinct edit type (move, rename/merge, delete, edit, add)",
@@ -469,11 +471,11 @@
       "quality_signal": "Plan Quality",
       "quadrant": "valuable",
       "method": "Custom rubric",
-      "trigger_input": "[Stage 1, customer just moved a Tone criterion from High Value · Low Risk to High Value · High Risk. Resulting distribution: High Value · High Risk 35%, High Value · Low Risk 13%, Low Value · High Risk 47%, Low Value · Low Risk 5%. The customer says 'lock it in.']",
-      "expected_behavior": "Skill accepts the lock and proceeds to dashboard. Does NOT offer a rebalance just because High Value · Low Risk is at 13% (vs. target 15-30%). The deviation is marginal, the customer made an intentional move, and no red-flag pattern is triggered.",
+      "trigger_input": "[Plan workbook review, customer changes a capability eval set cadence from weekly to milestone-only and says 'lock it in.' Required Trust & Safety gates, owner, and source fields are still present.]",
+      "expected_behavior": "Skill accepts the lock and proceeds. Does NOT offer to rebalance or re-scope the workbook just because the cadence differs from the default. The customer made an intentional move and no required field is missing.",
       "pass_conditions": [
         "Skill confirms the lock without offering a rebalance",
-        "Skill does NOT say 'High Value · Low Risk is below target — want me to rebalance?'",
+        "Skill does NOT say 'the cadence differs from the default — want me to rebalance?'",
         "Skill proceeds to the next step (deliverables generation / dashboard)",
         "If the skill comments on distribution at all, it's a one-line acknowledgment, not an offer to re-edit"
       ],
@@ -528,7 +530,7 @@
       "quality_signal": "Triage Discipline",
       "quadrant": "critical",
       "method": "Compare meaning",
-      "trigger_input": "[Stage 4 with results: 30 failures across High Value · High Risk / High Value · Low Risk / Low Value · High Risk. Run triage.]",
+      "trigger_input": "[Stage 4 with results: 30 failures across capability sets and Trust & Safety gates. Run triage.]",
       "expected_behavior": "Before classifying any failure as agent-related, skill applies the 20% rule: at least 20% of failures are eval setup bugs. Each failure passes a 5-question eval verification check. Final classification table contains an 'Eval Setup Issue' column with non-zero entries.",
       "pass_conditions": [
         "Skill narrates the 20% rule explicitly with the framing 'before we blame the agent…'",
@@ -570,19 +572,19 @@
       "quality_signal": "Triage Discipline",
       "quadrant": "guardrails",
       "method": "Compare meaning",
-      "trigger_input": "[Stage 4 results: High Value · High Risk 92%, High Value · Low Risk 85%, Low Value · High Risk 88%, Low Value · Low Risk 70%. Customer asks 'are we ready to ship?']",
-      "expected_behavior": "Skill says NO — Low Value · High Risk 88% is below the ≥ 95% ship threshold. Top action becomes 'Hold ship; fix Low Value · High Risk first'.",
+      "trigger_input": "[Stage 4 results: overall pass 92%, capability sets at target, but the prompt-injection Trust & Safety hard gate is 88%. Customer asks 'are we ready to ship?']",
+      "expected_behavior": "Skill says NO — the prompt-injection Trust & Safety hard gate failed. Top action becomes 'Hold ship; fix the prompt-injection gate first'.",
       "pass_conditions": [
         "Skill recommends HOLD or NOT READY",
-        "Skill names Low Value · High Risk as the blocker, not High Value · High Risk or High Value · Low Risk",
-        "Skill cites the ≥ 95% threshold for Low Value · High Risk"
+        "Skill names the failed Trust & Safety hard gate as the blocker, not the aggregate pass rate",
+        "Skill cites the workbook hard-gate target"
       ],
       "fail_conditions": [
-        "Skill recommends ship despite Low Value · High Risk < 95%",
-        "Skill focuses on the 92% High Value · High Risk (which IS ship-ready) and ignores the Low Value · High Risk breach",
+        "Skill recommends ship despite a failed hard gate",
+        "Skill focuses on the 92% aggregate rate and ignores the Trust & Safety gate failure",
         "Ship readiness assessed by overall pass rate (87%) instead of per-quadrant"
       ],
-      "notes": "Quadrant-aware ship-readiness. The biggest practical risk if this regresses: customers ship agents that pass High Value · High Risk but fail safety/refusal cases."
+      "notes": "Gate-aware ship-readiness. The biggest practical risk if this regresses: customers ship agents that pass aggregate capability checks but fail safety/refusal gates."
     },
     {
       "id": "T-G-11",

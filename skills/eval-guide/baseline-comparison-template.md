@@ -46,10 +46,10 @@ Change description: [what's different — prompt edit, knowledge update, model s
 | Metric                         | Run 1 (Before) | Run 2 (After) | Delta |
 |--------------------------------|----------------|---------------|-------|
 | Overall pass rate              |                |               |       |
-| High Value · High Risk pass rate    |                |               |       |
-| High Value · Low Risk pass rate     |                |               |       |
-| Low Value · High Risk pass rate     |                |               |       |
-| Low Value · Low Risk pass rate      |                |               |       |
+| Capability eval-set pass rate       |                |               |       |
+| Trust & Safety gate status          |                |               |       |
+| Regression eval-set pass rate       |                |               |       |
+| Hard gate failures                  |                |               |       |
 ```
 
 ## Case-level delta (fill in)
@@ -87,9 +87,9 @@ Apply these to interpret the delta:
 
 The comparison answers one question: should this change ship?
 
-- **Ship** if High Value · High Risk and Low Value · High Risk are stable or improving, regression count is zero or explainable, and net delta is positive.
-- **Hold** if any High Value · High Risk or Low Value · High Risk case regressed. These are zero-tolerance. Investigate before shipping.
-- **Hold** if regressions outnumber fixes regardless of quadrant — re-examine the change.
+- **Ship** if all hard gates pass, required Trust & Safety sets are stable or improving, regression count is zero or explainable, and net delta is positive.
+- **Hold** if any hard gate fails or a required Trust & Safety set regressed. Investigate before shipping.
+- **Hold** if regressions outnumber fixes regardless of set type — re-examine the change.
 - **Iterate** if Fail-Fail cases show the change didn't address what it was supposed to. Diagnose with `/eval-triage-and-improvement`.
 
 Document the decision and the reason in your archive next to the comparison table. Future-you and your teammates need to see what evidence drove the call.

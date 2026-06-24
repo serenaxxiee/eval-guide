@@ -17,7 +17,7 @@ These two skills share the same triage framework but serve different modes of wo
 |---|---|
 | You want **interactive guidance** walking through diagnosis step by step | You have a CSV file or concrete results and want a **one-shot structured report** |
 | You are in an **ongoing improvement loop** — fixing, re-running, and re-triaging | This is your **first look** at results — you need a verdict and top actions fast |
-| You need **detailed remediation help** for specific quality signals (e.g., "wrong tool fires — now what?") | You want a **customer-deliverable artifact** (the .docx triage report) |
+| You need **detailed remediation help** for specific eval-set failure patterns (e.g., "wrong tool fires — now what?") | You want a **customer-deliverable artifact** (the .docx triage report) |
 | You have **many failures** (15+) and need help prioritizing which to investigate | The eval run is relatively straightforward (<20 failures) |
 | You need the playbook worked examples and deeper diagnostic walkthroughs | You need the **activity map / result comparison** tool recommendations inline |
 
@@ -149,7 +149,7 @@ Maintain a **failure-pattern log** for every agent-quality problem: test case, s
 
 ### Step 6: Map to Remediation
 
-For detailed remediation steps by Step 7 root bucket, operational subtype, and quality signal, read the playbook files:
+For detailed remediation steps by Step 7 root bucket, operational subtype, and eval-set failure pattern, read the playbook files:
 - **Full triage decision tree**: Read `triage-and-improvement-playbook/triage-decision-tree.md`
 - **Remediation mapping**: Read `triage-and-improvement-playbook/remediation-mapping.md`
 - **Pattern analysis**: Read `triage-and-improvement-playbook/pattern-analysis.md`
@@ -164,13 +164,13 @@ For detailed remediation steps by Step 7 root bucket, operational subtype, and q
 | Outdated expected answer | Update expected value to match current source content |
 | Overly rigid grader | Switch to Compare Meaning, or broaden keyword set |
 | Unrealistic test case | Rewrite input using actual user language |
-| Wrong eval method | Change method to match quality signal (see scenario library) |
+| Wrong eval method | Change method to match the eval-set purpose and evidence type |
 | Grader error/bias | Review rubric, add examples, consider deterministic method |
 
 **Agent-quality fixes — agent configuration / knowledge / tools:**
 
-| Quality Signal | Common Fix |
-|---------------|-----------|
+| Failure pattern | Common Fix |
+|-----------------|-----------|
 | Factual accuracy (wrong source) | Review knowledge source config, verify indexing, check vocabulary match |
 | Factual accuracy (wrong extraction) | Add extraction guidance to system prompt |
 | Hallucination (faithfulness capability failure) | Improve retrieval/chunking first; add instruction: "Only answer from knowledge sources. If unavailable, say so." |
@@ -220,7 +220,7 @@ Output a structured triage report:
 ## Failure Analysis
 ### Failure 1: [Test Case ID]
 - **Set Type / Category:** capability or trust_safety / ...
-- **Quality Signal:** ...
+- **Eval-set focus:** ...
 - **Sample Input:** ...
 - **Expected:** ...
 - **Actual:** ...
@@ -322,7 +322,7 @@ If your triage identified a fix-and-rerun cycle, export the pre-fix results *bef
 
 ## Cross-Reference
 
-This skill uses `skills/eval-guide/playbook.md` as the methodology spine. It also works alongside the **AI Agent Evaluation Scenario Library** (`github.com/microsoft/ai-agent-eval-scenario-library`), which defines supporting scenarios and quality signals, and the **Triage & Improvement Playbook** (`github.com/microsoft/triage-and-improvement-playbook`), which provides supporting diagnostic frameworks for Step 7.
+This skill uses `skills/eval-guide/playbook.md` as the methodology spine. It also works alongside the **AI Agent Evaluation Scenario Library** (`github.com/microsoft/ai-agent-eval-scenario-library`), which defines supporting scenario patterns and quality dimensions, and the **Triage & Improvement Playbook** (`github.com/microsoft/triage-and-improvement-playbook`), which provides supporting diagnostic frameworks for Step 7.
 
 ### Related eval skills
 

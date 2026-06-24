@@ -47,7 +47,7 @@ The toolkit is grounded in Microsoft's ***Practical Guidance on Agent Evaluation
 | Operational stage | Playbook steps delivered | What it means | Other eval prompts |
 |---|---|---|---|
 | **Stage 0 (Discover)** | Step 1 | Eval objective, agent risk tier (5 factors), named owner — before you even have a working agent | — |
-| **Stage 1 (Plan)** | Steps 1, 4, 5 (+ plan of 2, 3) | Acceptance criteria on the Value × Risk matrix; pass-rate targets + hard/soft gates; human inputs + source→ground-truth map | the eval-suite-planner prompt (see [eval-suite-planner](eval-suite-planner.prompt.md)) |
+| **Stage 1 (Plan)** | Steps 1-6 (+ plan of 7, 8, 10) | Populated Eval Suite Template: planning note, eval-set registry, gates/improvement targets, human inputs, grader-validation notes, baseline placeholders, reusable candidates | the eval-suite-planner prompt (see [eval-suite-planner](eval-suite-planner.prompt.md)) |
 | **Stage 2 (Generate)** | Steps 2, 3 (+ Step 8 design) | Build capability eval sets and separate trust & safety eval sets; tag each for the regression partition | the eval-generator prompt (see [eval-generator](eval-generator.prompt.md)) |
 | **Stage 3 (Run)** | Step 6 | Run the baseline against a live agent; record version + timestamp | — |
 | **Stage 4 (Interpret)** | Steps 7, 9 (+ Step 10 closeout) | Diagnose each failure (eval-setup vs agent-quality), gate-based verdict, design the optimization loop, flag reusable assets | the eval-result-interpreter prompt (see [eval-result-interpreter](eval-result-interpreter.prompt.md)), the eval-triage-and-improvement prompt (see [eval-triage-and-improvement](eval-triage-and-improvement.prompt.md)) |
@@ -114,114 +114,85 @@ Display this and ask: **"Does this capture what you're building? Anything to add
 
 ## Stage 1: Plan
 
-Using the Agent Vision, produce a structured eval suite plan. This works whether the agent exists or not — the plan defines what the agent SHOULD do.
+Using the Agent Vision, populate the Eval Suite Planning & Logging Template. This works whether the agent exists or not — the workbook defines which eval sets to build, how they are governed, who owns human inputs, and how baseline/regression/reuse will be tracked.
 
 ### What to do
 
-1. **Determine eval depth from agent architecture:**
+1. **Copy and preserve the template.**
 
-   Different agent architectures require different eval layers. Use this to scope the eval plan — don't over-test simple agents or under-test complex ones.
+   Use the attached Eval Suite Template workbook when available. Populate a copy of it only. Do not rename sheets, add sheets, add columns, change headers, rewrite README text, edit `Dropdown Lists`, change styles, or change data validation. If the template is missing, ask for it instead of creating a different workbook.
 
-   | Architecture | What it is | What to evaluate | Example scenarios |
-   |---|---|---|---|
-   | **Prompt-level** (simple Q&A, no knowledge sources, no tools) | Agent responds from its system prompt and LLM knowledge only | Response quality, tone, boundaries, refusal behavior | FAQ bot with hardcoded answers, greeting agent |
-   | **RAG / Knowledge-grounded** (has knowledge sources, no tool use) | Agent retrieves from documents, SharePoint, websites, etc. | Everything above PLUS: retrieval accuracy, grounding (did it cite the right source?), hallucination prevention, completeness | HR policy bot, IT knowledge base agent |
-   | **Agentic** (multi-step, tool use, orchestration) | Agent calls APIs, uses connectors, makes decisions, chains actions | Everything above PLUS: tool selection accuracy, action correctness, error recovery, multi-turn context retention, task completion rate | Expense submission agent, incident triage bot, booking agent |
+2. **Populate Step 1 planning.**
 
-   **Tell the customer:** "Your agent is [architecture type], which means we need to test [these layers]. A knowledge-grounded agent needs hallucination tests that a simple Q&A bot doesn't. An agentic workflow needs tool-routing tests that a knowledge bot doesn't. This scopes your eval so you're testing what actually matters."
+   Fill the existing `1 . Planning` input cells:
+   - agent identity;
+   - one-sentence eval objective;
+   - five-factor risk tier: reach, criticality of error, autonomy/blast radius, regulatory/compliance exposure, data sensitivity;
+   - owners and roles;
+   - deployment gates / sign-off criteria.
 
-   **Use this to filter scenarios in the next step** — skip capability scenarios that don't apply to the agent's architecture. A prompt-level agent doesn't need Knowledge Grounding tests; a non-agentic agent doesn't need Tool Invocation tests.
+3. **Define eval sets, not scenarios.**
 
-2. **Match to scenario types:**
+   Populate `2 . Eval Suite Registry` with one row per eval set:
+   - **Capability** sets: accuracy/correctness, faithfulness/groundedness, relevancy, style/tone, reasoning/tool use as applicable. Hallucination stays in faithfulness/groundedness.
+   - **Trust & Safety** sets: guardrails, out-of-scope handling, sensitive-data handling, prompt injection/jailbreak resilience, compliance-specific behavior as applicable.
 
-| If the agent... | Business-problem scenarios | Capability scenarios |
-|---|---|---|
-| Answers questions from knowledge sources | Information Retrieval | Knowledge Grounding + Compliance |
-| Executes tasks via APIs/connectors | Request Submission | Tool Invocations + Safety |
-| Walks users through troubleshooting | Troubleshooting | Knowledge Grounding + Graceful Failure |
-| Guides through multi-step processes | Process Navigation | Trigger Routing + Tone & Quality |
-| Routes conversations to teams/departments | Triage & Routing | Trigger Routing + Graceful Failure |
-| Handles sensitive data | (add to whichever applies) | Safety + Compliance |
-| All agents (always include) | — | Red-Teaming |
+   Do not generate legacy planning-artifact rows in the workbook. The registry is one row per eval set only.
 
-**Explain your picks:** "Based on your Agent Vision, I'm selecting Information Retrieval and Knowledge Grounding because your agent answers from policy documents. I'm also including Red-Teaming because every agent needs adversarial testing — your users will try to break it eventually."
+4. **Apply v5 Step 4 gates and improvement targets.**
 
-3. **Produce the eval plan:**
+   Use the existing registry columns:
+   - Trust & Safety sets: absolute pass-rate hard gates, usually near 100%.
+   - Capability sets: launch floor for first deployment plus regression/direction after baseline, not a standing absolute target.
+   - High-risk capabilities: explicit hard floor when the capability functions like a guardrail.
+   - Put the nuance in `Target pass rate`, `Target rationale`, `Gate type`, `Intended use`, `Run cadence`, and `Notes`; do not add a new column.
 
-**Scenario plan table:**
+5. **Specify Step 5 human inputs.**
 
-| # | Scenario Name | Category | Tag | Evaluation Methods |
-|---|---|---|---|---|
+   Use the registry columns for human input type/author, grounding source dependency, and source-change review. Use `TBD - confirm before baseline` where owners or sources are unknown.
 
-Category distribution: Core business 30-40%, Capability 20-30%, Safety 10-20%, Edge cases 10-20%. Total: 10-15 scenarios.
+6. **Plan Step 6 grader validation.**
 
-**Method mapping:**
+   The template has no grader-validation columns. Do not add them. Record grader type and validation expectations in each registry row's `Notes`, e.g. programmatic check to confirm, human-review agreement, or LLM-as-judge validation against human-labeled hard and borderline cases.
 
-| What you're testing | Primary method | Secondary |
-|---|---|---|
-| Factual accuracy (specific facts) | Keyword Match | Compare Meaning |
-| Factual accuracy (flexible phrasing) | Compare Meaning | Keyword Match |
-| Response quality, tone, empathy | General Quality | Compare Meaning |
-| Hallucination prevention | Compare Meaning | General Quality |
-| Negative tests (must NOT do X) | Keyword Match — negative | — |
-| Tool/topic routing correctness | Capability Use | — |
-| Exact codes, labels, structured output | Exact Match | — |
-| Phrasing precision (wording matters) | Text Similarity | Compare Meaning |
-| Domain-specific criteria (compliance, tone, policy) | Custom | — |
+7. **Seed Step 7 baseline placeholders only in existing Run Log columns.**
 
-**Beyond Custom — rubric-based grading:** For customers who need more granular scoring than Custom's pass/fail labels, the [Copilot Studio Kit](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/kit-rubrics-tests) supports rubric-based grading on a 1–5 scale. Rubrics replace the standard validation logic with a custom AI grader aligned to domain-specific criteria. Two modes: **Refinement** (grade + rationale — use first to calibrate the rubric against human judgment) and **Testing** (grade only — use for routine QA after the rubric is trusted). Mention this to customers who are choosing Custom methods for compliance, tone, or brand voice — rubrics are the advanced option for ongoing calibrated quality assurance.
+   Add optional baseline placeholder rows in `3 . Run Log`: `Run type = Baseline`, result fields blank, `Actionable next step = Validate grader, then run baseline`, `Status = Open`.
 
-**What General Quality actually measures:** When explaining General Quality to customers, tell them what the LLM judge evaluates. Per MS Learn docs (March 2026), General Quality scores on four criteria — ALL must be met for a high score:
+8. **Partition Step 8 regression cadence.**
 
-| Criterion | What it checks | Example question it answers |
-|---|---|---|
-| **Relevance** | Does the response address the question directly? | "Did the agent stay on topic or go off on a tangent?" |
-| **Groundedness** | Is the response based on provided context, not invented? | "Did the agent cite its knowledge sources or make things up?" |
-| **Completeness** | Does the response cover all aspects with sufficient detail? | "Did the agent answer the full question or just part of it?" |
-| **Abstention** | Did the agent attempt to answer at all? | "Did the agent refuse to answer a question it should have answered?" |
+   Use `Intended use` and `Run cadence` in the registry. Capability sets usually become `Both` or `Regression`; most T&S sets are `Gate`, with a slim regression subset for model/tool/policy changes.
 
-Tell the customer: "If General Quality scores are low, these four criteria tell you WHERE to look. A response can be relevant but not grounded (it answered the right question but invented the answer), or grounded but incomplete (it used the right source but missed half the information)."
+9. **Flag Step 10 reusable assets.**
 
-**Explain the methods:** "I'm using Compare meaning for factual questions because the agent doesn't need to use the exact same words — it just needs to convey the same information. For safety tests I'm using Compare meaning too, because we need to check that the refusal matches what we expect."
-
-**Quality signals** — map to the agent's capabilities.
-
-**Pass/fail thresholds** — calibrated to risk profile:
-
-| Category | Low risk | Medium risk | High risk |
-|---|---|---|---|
-| Core business | >=80% | >=90% | >=95% |
-| Safety & compliance | >=90% | >=95% | >=99% |
-| Edge cases | >=60% | >=70% | >=80% |
-
-**Priority order:** Core business → Safety → Capability → Edge cases.
-
-**Highlight what they'd miss:** "Notice I included hallucination prevention tests — questions about topics NOT in your knowledge sources. Most customers only test what the agent should know. Testing what it should NOT know is just as important — this catches the agent making up answers."
+   Populate `4 . Reusable Library` only with candidates that could help other agents: reusable T&S sets, rubrics, failure-pattern templates, or production-derived edge-case categories.
 
 ### Output
 
-Display the scenario plan table and thresholds. Then **automatically generate a customer-ready eval plan report** as a formatted report document. This is the customer's first deliverable — the eval plan they can share with their team before any test cases are written.
+Do not display a long summary of the planned eval sets and governance in chat. Instead, **automatically generate a customer-ready eval-suite planning workbook** as `eval-suite-<agent-name>-<YYYY-MM-DD>.xlsx` and a companion interactive review page as `eval-suite-<agent-name>-<YYYY-MM-DD>-review.html`. These are the customer's first deliverables before any test cases are written.
 
-The report must be:
-- **Concise** — no filler, no walls of text. Tables over paragraphs.
-- **Presentable** — professional formatting with color-coded headers, clean tables, visual hierarchy
-- **Self-contained** — a customer who wasn't in the conversation can read it and understand the eval plan
+Use the `/xlsx` skill and populate the workbook directly from `skills/eval-guide/eval-suite-template.md`.
 
-Report structure:
-1. Agent Vision summary (from Stage 0) — 5-6 lines max
-2. Scenario type matching rationale
-3. Eval plan table (scenarios, categories, methods)
-4. Method mapping and quality signal explanation
-5. Pass/fail thresholds with rationale
-6. User profile test sets (if applicable)
+If the user provided a blank Eval Suite Template workbook, copy that workbook and populate it. Otherwise ask for the workbook; do not recreate or redesign it.
 
-Tell the customer: "Here's your eval plan report. Share this with your team for alignment before we generate test cases."
+Workbook population requirements:
+1. `1 . Planning` — fill agent identity, five-factor risk classification, owners/roles, and deployment gates/signoff criteria. Use `TBD - confirm before baseline` for required fields that are still unknown.
+2. `2 . Eval Suite Registry` — one row per eval set, not per test case. Keep capability and trust & safety sets separate, with target pass rate, target rationale, gate type, intended use, cadence, human input, grounding source dependency, source-review trigger, reuse tier/status, and notes.
+3. `3 . Run Log` — add baseline placeholder rows for each eval set with `Run type = Baseline`, target copied from the registry, blank result fields, `Actionable next step = Run baseline`, and `Status = Open`.
+4. `4 . Reusable Library` — pre-populate reusable candidates from the plan, especially trust & safety sets, rubrics, prompt-injection coverage, sensitive-data handling, and generic failure-pattern templates.
+5. `Dropdown Lists` — preserve exactly; do not edit.
+
+Create the HTML review page using `skills/eval-guide/plan-review-page.md`. Put the workbook summary, eval-set explorer, TBD action list, and human review checkpoints in the page, not in chat.
+
+The workbook is the primary Plan artifact. A separate formatted narrative report is optional only if the user explicitly asks for it.
+
+Tell the customer only where to open the workbook and HTML review page. Do not duplicate the page content in the chat response.
 
 ---
 
 ## Stage 2: Generate
 
-Generate test cases as **separate CSV files per quality signal**. These are the customer's deliverable — they can import them into Copilot Studio or use them as acceptance criteria during development.
+Generate test cases as **separate CSV files per eval set** from the workbook registry. These are the customer's deliverable — they can import them into Copilot Studio or use them as acceptance criteria during development.
 
 
 ### Choose evaluation mode: Single Response vs. Conversation
@@ -250,11 +221,11 @@ Before generating test cases, determine which evaluation mode fits each scenario
 
 ### What to do
 
-1. Generate one test case per scenario row from the plan. For conversation scenarios, generate multi-turn test cases with realistic dialogue sequences (up to 6 Q&A pairs).
+1. Generate test cases from each applicable eval-set row in the workbook registry. For conversation eval sets, generate multi-turn test cases with realistic dialogue sequences (up to 6 Q&A pairs).
 
 2. **Write expected responses based on the Agent Vision** — what the agent SHOULD say based on the knowledge sources and boundaries defined in Stage 0. Note: "These expected responses reflect your stated requirements. Refine them once the agent is built and you see how it actually responds."
 
-3. **Group by quality signal** into separate CSV files:
+3. **Group by eval set** into separate CSV files:
    - `eval-knowledge-accuracy.csv`
    - `eval-safety-compliance.csv`
    - `eval-hallucination-prevention.csv`
@@ -271,7 +242,7 @@ Before generating test cases, determine which evaluation mode fits each scenario
 "How many PTO days do LA employees get?","LA employees receive 18 PTO days per year."
 ```
 
-The **Testing method is NOT a CSV column** — it is assigned per row in Copilot Studio's Evaluate tab after import; the method chosen per criterion travels in the companion `.docx` manifest / `eval-setup-guide.docx`. Valid Testing method values (assigned in the UI): `General quality`, `Compare meaning`, `Similarity`, `Exact match`, `Keyword match` (core five), plus `Capability use` and `Custom` (extensions).
+The **Testing method is NOT a CSV column** — it is assigned per row in Copilot Studio's Evaluate tab after import; the method chosen per criterion travels in the companion `.docx` manifest / `eval-setup-guide.docx`. Valid Testing method values (assigned in the UI): `General quality`, `Compare meaning`, `Text similarity`, `Exact match`, `Keyword match` (core five), plus `Capability use` and `Custom` (extensions).
 
 5. **Test method per scenario type:**
 
@@ -283,7 +254,7 @@ The **Testing method is NOT a CSV column** — it is assigned per row in Copilot
 | Agent should refuse | Compare meaning | Refusal matches expected |
 | Domain-specific criteria (compliance, tone, policy) | Custom | Define your own rubric and pass/fail labels |
 
-6. **Highlight the value:** "You now have [X] test cases across [Y] quality signals. Compare that to the 5-10 happy-path prompts most customers start with. These include adversarial attacks, hallucination traps, robustness tests, and edge cases your users will encounter in production."
+6. **Highlight the value:** "You now have [X] test cases across [Y] eval sets from your workbook registry. Compare that to the 5-10 happy-path prompts most customers start with. These include adversarial attacks, hallucination traps, robustness tests, and edge cases your users will encounter in production."
 
 ### Output
 
@@ -296,8 +267,8 @@ Write each CSV to the working directory. Display a summary table.
 
 Report structure:
 1. Agent Vision summary (from Stage 0) — 5-6 lines max
-2. Eval plan table (scenarios, categories, methods)
-3. Test case summary table per quality signal (question + expected response + method)
+2. Eval-set registry summary (Capability vs Trust & Safety, governance, cadence, owners)
+3. Test case summary table per eval set (question + expected response + method)
 4. "What these tests catch" callout — 3-4 bullet points on what the customer would have missed
 5. Next steps — what to do with these files
 
@@ -336,7 +307,7 @@ Results table + `eval-results-YYYY-MM-DD.csv` and `.json`.
 
 ## Stage 4: Interpret
 
-Analyze eval results to understand what's working, what's failing, and what to fix next.
+Analyze eval results to understand what's working, what gates are blocking shipment, what failures are eval-setup issues versus agent-quality issues, and what to fix next.
 
 **Which prompt to use:** For a one-shot triage report from a CSV file or results summary, use the eval-result-interpreter prompt (see [eval-result-interpreter](eval-result-interpreter.prompt.md)). For interactive, multi-round diagnosis with detailed remediation guidance, use the eval-triage-and-improvement prompt (see [eval-triage-and-improvement](eval-triage-and-improvement.prompt.md)). Start with the interpreter; switch to triage if you need help implementing fixes.
 
@@ -344,13 +315,29 @@ Analyze eval results to understand what's working, what's failing, and what to f
 
 1. **Pre-triage check** — Were knowledge sources accessible? APIs healthy? Auth valid?
 
-2. **Score summary** — Total, passed, failed, pass rate per category and test method.
+2. **Gate summary and verdict** — Build the eval-set table from the manifest: eval set, set type, category / dimension, testing method, regression class, target, actual, gate type, and gate status. Drive the verdict from hard/soft gates, not aggregate pass rate:
+
+   ```
+   ANY hard gate missed?
+       YES -> cannot SHIP.
+              Trust & safety hard-gate miss -> usually BLOCK.
+              Deployment-critical capability hard-gate miss -> BLOCK or ITERATE.
+              Other hard-gate miss -> ITERATE until fixed.
+       NO  ->
+           ANY soft target missed?
+               YES -> ITERATE.
+               NO  -> SHIP, assuming human review agrees coverage is sufficient.
+   ```
+
+   Use eval-set pass rates, governing instruments, and regression/direction changes as supporting evidence. If no manifest/workbook is present, infer gates only as a fallback and state that gate status needs owner review.
 
 3. **Failure triage** — **Explain the key insight:** "Before we blame the agent — at least 20% of failures in a new eval are actually eval setup issues, not agent issues. The test case might be wrong, the expected response might be outdated, or the testing method might be inappropriate. Let me check that first."
 
    Apply 5-question eval verification for each failure.
 
-4. **Root causes:** Eval Setup Issue / Agent Configuration Issue / Platform Limitation.
+4. **Root causes:** First classify each failure into the playbook Step 7 bucket:
+   - **Eval Setup Issue** — the test, expected answer, method, rubric, or judge is wrong. Fix the eval.
+   - **Agent Quality Issue** — the eval correctly caught a real agent problem. Then subtype it as **Agent Configuration Issue** or **Platform Limitation** so the owner knows what to fix or mitigate.
 
 5. **Top 3 actions** — Each: **Change** X → **Re-run** Y → **Expect** Z.
 
@@ -359,11 +346,13 @@ Analyze eval results to understand what's working, what's failing, and what to f
 If 100% pass: "A 100% pass rate is a red flag — your eval is likely too easy."
 
 **Always generate a customer-ready triage report** as a formatted report document. Same principles: concise, presentable, self-contained. Structure:
-1. Score summary table (pass rate per category and test method)
-2. Failure triage table (test case, root cause, classification)
-3. Top 3 actions (Change → Re-run → Expect)
-4. Pattern analysis
-5. Next steps
+1. Gate verdict — SHIP / ITERATE / BLOCK, plus set-level gate table (target, actual, hard/soft, PASS/MISS)
+2. Eval-set performance — pass rates, gate status, regression/direction changes, and grader-validation caveats
+3. Failure triage table (test case, root cause, classification)
+4. Top 3 actions (Change → Re-run → Expect)
+5. Pattern analysis
+6. Step 9 optimization loop plan and Step 10 reusable-asset register
+7. Next steps
 
 ---
 

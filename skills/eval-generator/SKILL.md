@@ -1,6 +1,6 @@
 ---
 name: eval-generator
-description: Generate standalone — turns an eval plan (output of `/eval-suite-planner`) into concrete capability eval sets and trust & safety eval sets. Delivers playbook Steps 2 & 3 and designs the Step 8 regression partition. Outputs 2-column Copilot Studio `-for-import.csv` files (Question + Expected response only), a customer-ready `.docx` manifest report, and an `eval-setup-guide.docx` for assigning testing methods per row in Copilot Studio's Evaluate tab. Use after planning, before running.
+description: Generate standalone — turns the populated Eval Suite Planning workbook (output of `/eval-suite-planner`) into concrete capability eval sets and trust & safety eval sets. Delivers playbook Steps 2 & 3 and designs the Step 8 regression partition. Outputs 2-column Copilot Studio `-for-import.csv` files (Question + Expected response only), a customer-ready `.docx` manifest report, and an `eval-setup-guide.docx` for assigning testing methods per row in Copilot Studio's Evaluate tab. Use after planning, before running.
 ---
 
 ## Purpose
@@ -9,7 +9,7 @@ This skill produces the **Generate** artifact of the `/eval-guide` lifecycle: im
 
 In the canonical **Practical Guidance on Agent Evaluation: 10-step playbook**, this skill delivers **Step 2 — Build the Capability Eval Sets** and **Step 3 — Build the Trust & Safety Eval Sets**, and it designs the **Step 8 — Regression Suite** partition for those sets. Keep the operational stage name **Generate** as UX scaffolding; use the playbook terms for methodology.
 
-**Primary mode** — the conversation already contains an `/eval-suite-planner` output (an eval plan with acceptance criteria on the Value × Risk matrix, risk tier, methods, pass/fail conditions, capability dimensions, trust & safety categories, targets, gates, human inputs, and provenance). Generate one set of cases per capability dimension and one set per trust & safety category.
+**Primary mode** — the conversation or attachments contain the populated `/eval-suite-planner` workbook (`eval-suite-<agent-name>-<date>.xlsx`). Use `2 . Eval Suite Registry` as the source of truth for eval sets, and `1 . Planning` for risk tier, owners, gates, lifecycle stage, and source dependencies. Generate one set of cases per capability row and one set per trust & safety row. If only a narrative plan is available, use it as a fallback source.
 
 **Fallback mode** — no plan in conversation. Accept a plain-English agent description and generate test cases from scratch (6–8 cases minimum), using the same data model and including at least one adversarial / trust & safety scenario.
 
@@ -21,11 +21,18 @@ When invoked as `/eval-generator` (with or without input):
 
 ### Step 0 — Detect input mode
 
-Scan the conversation for a planner output (acceptance criteria with Value × Risk quadrants, methods, pass/fail conditions, capability dimensions, trust & safety categories, pass-rate targets, gate types, human inputs, and provenance).
+Scan the conversation and attachments for a populated planner workbook first. If present, read:
 
-- **Plan found** → *"Generating test cases from your eval plan (X capability sets and Y trust & safety sets)."* Generate from the plan.
+- `1 . Planning` for agent identity, risk tier, owners, lifecycle stage, deployment gates, and source dependencies.
+- `2 . Eval Suite Registry` for eval set IDs, category, dimension, diagnostic signal, targets, gate type, intended use, cadence, human input, source dependency, and reusable-asset status.
+- `3 . Run Log` only for existing baseline/iteration context, if any.
+
+If no workbook is present, scan the conversation for a legacy narrative planner output with eval sets, capability dimensions, trust & safety categories, pass-rate targets, gate types, human inputs, and provenance. Prefer the workbook whenever both exist.
+
+- **Workbook found** → *"Generating test cases from your eval-suite workbook (X capability sets and Y trust & safety sets)."* Generate from the registry.
+- **Narrative plan found** → *"Generating test cases from your eval plan (X capability sets and Y trust & safety sets)."* Generate from the plan.
 - **No plan, but agent description provided** → *"Generating test cases for: [agent task in your own words]."* If the description is fewer than two sentences, ask one clarifying question and wait.
-- **No plan, no description** → *"I need either an agent description or a plan from `/eval-suite-planner`. Run `/eval-suite-planner <description>` first for the best results."*
+- **No plan, no description** → *"I need either an agent description or the populated eval-suite workbook from `/eval-suite-planner`. Run `/eval-suite-planner <description>` first for the best results."*
 
 ---
 
@@ -43,13 +50,13 @@ Scan the conversation for a planner output (acceptance criteria with Value × Ri
 - Context retention matters — later answers depend on earlier ones.
 - The agent needs to ask clarifying questions before answering.
 
-If you switch to conversation mode, also recommend creating a complementary **single-response** set for criteria that need `Compare meaning` / `Similarity` / `Exact match` (which conversation mode doesn't support).
+If you switch to conversation mode, also recommend creating a complementary **single-response** set for criteria that need `Compare meaning` / `Text similarity` / `Exact match` (which conversation mode doesn't support).
 
 ---
 
 ### Step 2 — Data model: capability and trust & safety sets
 
-This is the most important rule: **capability and trust & safety are first-class, separate groups.** Do not collapse trust & safety into a renamed quality signal, and do not treat hallucination as trust & safety. Hallucination is a **faithfulness/groundedness capability failure**.
+This is the most important rule: **capability and trust & safety are first-class, separate groups.** Do not collapse trust & safety into a renamed eval set, and do not treat hallucination as trust & safety. Hallucination is a **faithfulness/groundedness capability failure**.
 
 #### Capability eval sets (`set_type=capability`)
 
@@ -97,7 +104,6 @@ The internal data structure:
         {
           "criterion_id": "A2",
           "statement": "The agent should answer PTO questions using only the Time Off Policy and cite the policy.",
-          "quadrant": "High Value · High Risk",
           "pass_condition": "Response gives the correct PTO number and cites the Time Off Policy.",
           "fail_condition": "Unsupported PTO number, missing citation, or invented policy reference.",
           "custom_rubric": "",
@@ -140,9 +146,9 @@ The internal data structure:
 - Each test set carries `set_type`, `methods`, `gate_type`, `pass_rate_target`, `regression_class`, `cadence`, `owner`, `provenance`, and `human_review_required` for the manifest.
 - Capability sets carry `capability_dimension`; trust & safety sets carry `category`. Do not put both on the same set unless the plan explicitly asks for a cross-reference; even then, choose one primary `set_type`.
 - Each set's `methods: []` is the method set for the whole set. Pick one when one fits; pick multiple only when the set genuinely needs them.
-- Criteria carry `statement`, `quadrant`, `pass_condition`, `fail_condition`, optional `custom_rubric`. **No per-criterion `method` field.**
+- Criteria carry `statement`, `pass_condition`, `fail_condition`, optional `custom_rubric`. **No per-criterion `method` field.**
 - Each case has `expected_responses: { method → value }` — one entry per method in the set's method set that needs a per-case reference. Reference-free methods (`General quality`, `Capability use`, `Custom`) do NOT need per-case entries.
-- Wrap AI-generated factual content in `[VERIFY: ...]` markers inside `Compare meaning` / `Similarity` entries — these are the spans the customer must fact-check before approving.
+- Wrap AI-generated factual content in `[VERIFY: ...]` markers inside `Compare meaning` / `Text similarity` entries — these are the spans the customer must fact-check before approving.
 
 ---
 
@@ -151,7 +157,7 @@ The internal data structure:
 | Method | Per-case data | Where the grading rule lives |
 |---|---|---|
 | **Compare meaning** | `expected_responses["Compare meaning"]` = canonical answer (paraphrase OK; wrap facts in `[VERIFY: …]`) | LLM judge compares semantic equivalence of agent response vs. canonical |
-| **Similarity** | `expected_responses["Similarity"]` = expected text | String similarity (0–1); default Pass ≥ 0.7 |
+| **Text similarity** | `expected_responses["Text similarity"]` = expected text | String similarity (0–1); default Pass ≥ 0.7 |
 | **Exact match** | `expected_responses["Exact match"]` = exact string | Byte-equal (after normalization) |
 | **Keyword match** | `expected_responses["Keyword match"]` = comma-separated keyword list (`"escalate, manager, callback"`) | All keywords present (default) or any-keyword mode |
 | **General quality** | none | LLM judge grades against `criterion.pass_condition` / `fail_condition` |
@@ -164,11 +170,11 @@ For criteria with `Custom` in the set's method set, draft a `custom_rubric` from
 
 ### Step 4 — Generate single-response cases
 
-**From a plan:** for each criterion, write 1+ cases. Match the criterion's **Value × Risk quadrant** to case count:
-- **High Value · High Risk** — 3–5 cases per criterion (variations of the highest-stakes scenarios).
-- **High Value · Low Risk** — 2–3 cases per criterion.
-- **Low Value · High Risk** — 2–3 cases per criterion (focused on adversarial / boundary-violation patterns where relevant).
-- **Low Value · Low Risk** — 1–2 cases per criterion.
+**From the workbook:** for each registry eval set, write cases proportional to the set's category, intended use, and gate type:
+- **Trust & safety hard gates** — 3–5 cases per set, including adversarial or boundary-violation patterns.
+- **High-risk capability floors** — 3–5 cases per set.
+- **Core capability launch floors** — 2–4 cases per set.
+- **Regression/direction capability sets** — 1–3 representative cases per set, expanding after baseline failures or production incidents.
 
 For each case:
 - `question` — a realistic input the agent would receive in production. Specific, not a placeholder. Include names, dates, IDs, context a real user would provide.
@@ -196,7 +202,7 @@ Use this only when Step 1 selected Conversation mode.
 **Conversation test set constraints:**
 - Up to 20 cases per set; up to 12 total messages (6 user-agent pairs) per case.
 - Supported methods: `General quality`, `Keyword match`, `Capability use`, `Custom (Classification)`.
-- NOT supported: `Compare meaning`, `Similarity`, `Exact match`.
+- NOT supported: `Compare meaning`, `Text similarity`, `Exact match`.
 
 **Format per case:**
 
@@ -237,7 +243,7 @@ Manifest notes: [gate type, pass-rate target, cadence, owner, provenance, human-
 
 The most common cause of false failures in eval results is **wrong expected responses**, not wrong agent answers. Defend against this with `[VERIFY: …]` markers — but only as a review aid, not as final output.
 
-- Every AI-generated factual claim in `Compare meaning` / `Similarity` expected responses goes inside `[VERIFY: ...]` — e.g., *"LA employees receive [VERIFY: 18] PTO days per year, per the [VERIFY: Time Off Policy v3.2]."*
+- Every AI-generated factual claim in `Compare meaning` / `Text similarity` expected responses goes inside `[VERIFY: ...]` — e.g., *"LA employees receive [VERIFY: 18] PTO days per year, per the [VERIFY: Time Off Policy v3.2]."*
 - Don't wrap structural language (`"Employees are eligible…"`) — only the *facts* you want the customer to verify.
 - Tell the customer: *"Read every [VERIFY] before approving — this is the most important review step. Wrong expected responses cause correct agent answers to fail."*
 
@@ -270,7 +276,7 @@ If a human-readable `eval-<set-slug>-<YYYY-MM-DD>-with-methods.csv` variant is p
 - `Question` = the case's question.
 - `Expected response` = whichever of the case's `expected_responses` is most informational, picked by this priority order against the set's method set:
   1. `Compare meaning` → `case.expected_responses["Compare meaning"]`.
-  2. `Similarity` → `case.expected_responses["Similarity"]`.
+  2. `Text similarity` → `case.expected_responses["Text similarity"]`.
   3. `Exact match` → `case.expected_responses["Exact match"]`.
   4. `Keyword match` → `case.expected_responses["Keyword match"]` (comma-separated keyword list).
   5. None of the above (set only has reference-free methods like `General quality` / `Custom` / `Capability use`) → leave the cell empty.
@@ -298,10 +304,10 @@ Use the `/docx` skill to generate `eval-test-cases-<agent>-<date>.docx`. This re
 Structure:
 
 1. **Agent Vision summary** (5–6 lines from Discover/Plan if available).
-2. **Risk tier and Value × Risk summary** — agent-level risk tier rationale plus criteria grouped by Value × Risk quadrant with pass/fail conditions.
+2. **Workbook registry summary** — agent-level risk tier rationale plus eval sets grouped by Capability vs Trust & Safety, including Step 4 governance, cadence, owners, provenance, and grader-validation notes.
 3. **Capability eval sets** — for each capability set:
    - Set name, `set_type=capability`, `capability_dimension`, method set, gate type, pass-rate target, regression class, cadence, owner, provenance, and human-review flag.
-   - Per criterion: quadrant badge, statement, pass/fail conditions, `custom_rubric` if Custom is in the set's methods.
+   - Per eval-set criterion: statement, pass/fail conditions, `custom_rubric` if Custom is in the set's methods.
    - Test cases under each criterion: Question + per-method expected (or note "graded against pass/fail" for reference-free methods) + source/ground-truth provenance.
    - Explicitly note that hallucination checks live in faithfulness/groundedness.
 4. **Trust & safety eval sets** — for each trust & safety set:
@@ -338,7 +344,7 @@ Display before ending. Eval kits are useless without human validation.
 | 5 | **Targets and gates are appropriate** | Hard gates vs soft targets reflect the agent's risk tier and the criticality of each set. Trust & safety is usually hard-gated. |
 | 6 | **Regression partition is usable** | Each set has `gate-only`, `regression`, or `exploratory`, with cadence and owner. Capability sets are usually regression; most trust & safety is gate-only. |
 | 7 | **Custom rubrics are precise** | For Custom criteria, read the `custom_rubric`. Vague rubrics ("Is the response good?") behave like General quality with extra steps. Sharpen until the rubric forces a binary verdict. |
-| 8 | **Negative test coverage** | For adversarial / Low Value · High Risk criteria, verify the expected behavior matches policy (refuse / redirect / escalate — pick the right one). |
+| 8 | **Negative test coverage** | For adversarial / Trust & Safety cases, verify the expected behavior matches policy (refuse / redirect / escalate — pick the right one). |
 | 9 | **Coverage spans the full Vision** | Every Vision capability and boundary has at least one case. Gaps surface here, not in production. |
 | 10 | **Conversation mode chosen for the right reasons** *(if applicable)* | Multi-turn cases test capabilities users actually exercise. If the agent mostly handles standalone questions, single-response gives better signal. |
 
@@ -370,7 +376,7 @@ Display before ending. Eval kits are useless without human validation.
 - **Set as the unit of versioning.** Tag each set CSV and manifest entry with the agent version and eval-set version. When the agent changes, re-run regression sets; when the eval set changes, snapshot the old version first.
 - **Production failures become test cases.** Every reported bad answer should land here within 24 hours, becoming a regression case for the relevant capability dimension or trust & safety category.
 - **Step 8 partition drives cadence.** Regression sets run per change / nightly / weekly; gate-only sets run at milestones such as pre-pilot, pre-production, and post-significant-change.
-- **GCC environment caveats:** no user profiles; no `Similarity` test method (replace with `Compare meaning` or `Keyword match`).
+- **GCC environment caveats:** no user profiles; no `Text similarity` test method (replace with `Compare meaning` or `Keyword match`).
 - **Real failures > synthetic cases.** Test cases drawn from actual support tickets, user complaints, known production bugs, or security reviews are higher signal than purely synthetic ones. Prioritize real-failure-sourced cases when available.
 
 ---
@@ -379,7 +385,7 @@ Display before ending. Eval kits are useless without human validation.
 
 ```
 /eval-suite-planner I'm building an HR policy bot...
-[planner outputs eval plan with capability criteria, trust & safety criteria, risk tier, gates, targets, and Value × Risk quadrants]
+[planner outputs a populated eval-suite workbook with capability rows, trust & safety rows, risk tier, gates/launch floors/regression governance, human inputs, cadence, and grader-validation notes]
 /eval-generator
 <- generates from the plan, grouped into capability eval sets and trust & safety eval sets
 <- produces 2-column -for-import CSV files plus a .docx manifest report

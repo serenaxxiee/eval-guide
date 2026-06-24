@@ -18,7 +18,7 @@ These two prompts share the same triage framework but serve different modes of w
 |---|---|
 | You have a CSV file or concrete results and want a **one-shot structured report** | You want **interactive guidance** walking through diagnosis step by step |
 | This is your **first look** at results — you need a verdict and top actions fast | You are in an **ongoing improvement loop** — fixing, re-running, and re-triaging |
-| You want a **customer-deliverable artifact** (the triage report) | You need **detailed remediation help** for specific quality signals (e.g., "wrong tool fires — now what?") |
+| You want a **customer-deliverable artifact** (the triage report) | You need **detailed remediation help** for specific eval-set failures (e.g., "wrong tool fires — now what?") |
 | The eval run is relatively straightforward (<20 failures) | You have **many failures** (15+) and need help prioritizing which to investigate |
 | You need the **activity map / result comparison** tool recommendations inline | You need the playbook worked examples and deeper diagnostic walkthroughs |
 
@@ -54,7 +54,7 @@ A pasted pass/fail count, list of failures, or verbal description of results.
 
 Prefer the manifest metadata produced by the generator — the companion report document and dashboard `stage-N-data.json` — over inferring from CSV filenames or question text. Use it to map each row or set to `set_type` (`capability` or `trust_safety`), category/dimension, testing method, gate type, pass-rate target, regression class, human-review flag, and source/ground-truth provenance. Say: "Using your manifest for set metadata and gate interpretation."
 
-If no manifest is present, fall back to the scenario plan table from the eval-suite-planner prompt (see [eval-suite-planner](eval-suite-planner.prompt.md)), then CSV filenames, then question text. State what was inferred and mark gate status as owner-review-needed.
+If no workbook/manifest is present, fall back to CSV filenames, then question text. State what was inferred and mark gate status as owner-review-needed.
 
 Work with whatever detail is available. If input is sparse, state what you assumed. Do not ask for more — give the best triage possible with what is provided.
 
@@ -118,9 +118,9 @@ ANY hard gate missed?
 
 Report each set's actual pass rate vs target and hard/soft gate status. Make explicit when aggregate pass rate is misleading: a high aggregate pass rate does **not** earn SHIP if a hard trust & safety gate failed.
 
-Use **risk tier** (agent-level: reach, criticality of error, autonomy/blast radius, regulatory exposure, data sensitivity) to interpret target strictness and severity. Use **Value × Risk quadrant** only for per-criterion prioritization and case allocation, not for gate decisions. Valid quadrant labels are: High Value · High Risk / High Value · Low Risk / Low Value · High Risk / Low Value · Low Risk.
+Use **risk tier** (agent-level: reach, criticality of error, autonomy/blast radius, regulatory exposure, data sensitivity) to interpret target strictness and severity. Use the workbook registry's eval-set category, gate type, target, intended use, cadence, and grader-validation notes as the source of truth for gate decisions.
 
-If no manifest is present, infer set grouping, gate type, and targets from the scenario plan, CSV filenames, or question text only as a fallback. State: "No manifest provided — gate status inferred and should be reviewed by the owner."
+If no workbook/manifest is present, infer set grouping, gate type, and targets from CSV filenames or question text only as a fallback. State: "No workbook or manifest provided — gate status inferred and should be reviewed by the owner."
 
 State the verdict prominently:
 - **"Verdict: SHIP."** — All hard gates pass and soft targets are acceptable or explicitly accepted by the owner.

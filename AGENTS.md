@@ -13,7 +13,7 @@ This toolkit provides 6 prompt files in `.github/prompts/`. When the user's requ
 | Prompt File | When to Use |
 |---|---|
 | `eval-guide.prompt.md` | Full eval lifecycle — discover, plan, generate, run, interpret. **Start here** when the user mentions agent evaluation, eval planning, "what should we test", or "how do we know if the agent is good". |
-| `eval-suite-planner.prompt.md` | Structured eval plan with scenarios, methods, quality signals, and thresholds. Use when the user has an agent description and needs a plan before generating test cases. |
+| `eval-suite-planner.prompt.md` | Populated Eval Suite Template workbook plus an interactive HTML review page with eval sets, methods, gates, human inputs, and grader-validation notes. Use when the user has an agent description and needs a plan before generating test cases. |
 | `eval-generator.prompt.md` | Generate test cases (CSV for single-response, blueprints for multi-turn). Use after planning, or standalone with an agent description. |
 | `eval-result-interpreter.prompt.md` | SHIP / ITERATE / BLOCK verdict from eval results. Use when the user has CSV results or pass/fail data to interpret. |
 | `eval-triage-and-improvement.prompt.md` | Interactive diagnosis and remediation for failing evals. Use when the user needs help debugging specific failures. |
@@ -73,5 +73,6 @@ The operational stages the toolkit walks a customer through — **Discover, Plan
 
 The toolkit generates:
 - **CSV files** — Importable directly into Copilot Studio's Evaluation tab. **Exactly 2 columns: `Question`, `Expected response`** (one row per case). The testing method is assigned per row in Copilot Studio's Evaluate tab after import; all other methodology metadata (set type, category, gate, target, provenance) travels in the companion `.docx` manifest, not the CSV.
+- **HTML review pages** — Interactive summaries for plan review, especially the eval-suite planner's workbook companion page. Use these instead of long chat summaries.
 - **Report documents** — Eval plans, test case summaries (with the per-case manifest), triage reports
 - **Conversation blueprints** — Multi-turn dialogue test structures

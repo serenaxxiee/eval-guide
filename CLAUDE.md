@@ -22,7 +22,7 @@ There is no build, no test runner, no lint step. Changes are validated by runnin
 | Skill | Role |
 |---|---|
 | `eval-guide` | Orchestrator. Owns the dashboard workflow and stage transitions. |
-| `eval-suite-planner` | Stage 1 standalone. Produces eval plan. |
+| `eval-suite-planner` | Stage 1 standalone. Produces eval-suite workbook plus an interactive HTML review page. |
 | `eval-generator` | Stage 2 standalone. Produces test-case CSVs / conversation blueprints. |
 | `eval-result-interpreter` | Stage 4 standalone. SHIP/ITERATE/BLOCK verdict from results. |
 | `eval-triage-and-improvement` | Stage 4 deep-dive. Interactive remediation. |
@@ -32,7 +32,7 @@ When editing one stage's behavior, check whether the corresponding standalone sk
 
 ### The dashboard is the review checkpoint
 
-Stages 0, 1, 2, and 4 of `/eval-guide` produce **interactive HTML dashboards** instead of asking "does this look right?" in chat. The flow is:
+`/eval-guide` uses interactive review surfaces instead of asking "does this look right?" in chat. Stage 1 Plan produces a populated workbook plus `eval-suite-<agent>-<date>-review.html`. Generate and Interpret use the dashboard server flow:
 
 1. Skill writes stage data to `stage-N-data.json`.
 2. Skill launches `python skills/eval-guide/dashboard/serve.py --stage <name> --data stage-N-data.json`.
@@ -41,7 +41,7 @@ Stages 0, 1, 2, and 4 of `/eval-guide` produce **interactive HTML dashboards** i
 5. `serve.py` detects `<stage>-feedback.json` on disk and exits.
 6. Skill reads the feedback file. **No `.docx` or `.csv` is generated until the user confirms via the dashboard.**
 
-Stage names map to file names: `discover` (0), `plan` (1), `generate` (2), `interpret` (4). Stage 3 (Run) executes tests directly with no dashboard. Templates live in `dashboard/templates/`; example stage data is in `dashboard/examples/`.
+Stage names map to file names for served dashboards: `generate` (2), `interpret` (4). Stage 3 (Run) executes tests directly with no dashboard. The planner HTML review page follows `skills/eval-guide/plan-review-page.md`; served dashboard templates live in `dashboard/templates/`, with example stage data in `dashboard/examples/`.
 
 ### Eval execution path (Stage 3)
 
@@ -63,8 +63,8 @@ When bumping a release: edit `VERSION`, update `.claude-plugin/plugin.json` and 
 
 These are non-obvious invariants enforced across all 6 skills — keep them consistent when editing:
 
-- **CSV format for Copilot Studio import**: exactly 2 columns — `Question`, `Expected response` (one row per case). The testing method is assigned per row in Copilot Studio's Evaluate tab **after** import — it is NOT a CSV column. All other methodology metadata (set type, trust&safety category, gate, target, regression class, provenance) travels in the companion `.docx` manifest + dashboard `stage-N-data.json`, never the CSV. Group test cases by eval set / quality signal into separate CSV files. (A 3-column `-with-methods` variant may be emitted for human readability only — it is never the import format.)
-- **Valid testing methods**: `General quality`, `Compare meaning`, `Similarity`, `Exact match`, `Keyword match`, `Capability use`, `Custom`. The first five are the Copilot Studio core set; the last two extend it.
+- **CSV format for Copilot Studio import**: exactly 2 columns — `Question`, `Expected response` (one row per case). The testing method is assigned per row in Copilot Studio's Evaluate tab **after** import — it is NOT a CSV column. All other methodology metadata (set type, trust&safety category, gate, target, regression class, provenance) travels in the workbook/manifest, never the CSV. Group test cases by eval set into separate CSV files. (A 3-column `-with-methods` variant may be emitted for human readability only — it is never the import format.)
+- **Valid testing methods**: `General quality`, `Compare meaning`, `Text similarity`, `Exact match`, `Keyword match`, `Capability use`, `Custom`. The first five are the Copilot Studio core set; the last two extend it.
 - **Stages 0–2 must work without a running agent.** Description-based mode is the default; live-agent mode is an enhancement when the Copilot Studio plugin is also installed. Don't introduce code paths that require live agent connectivity in those stages.
 - **Architecture-aware scoping**: planner output should change based on whether the agent is prompt-level / RAG / agentic. Don't generate tool-routing tests for a simple FAQ bot.
 - **Every eval plan must include at least one adversarial / safety scenario.**
