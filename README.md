@@ -24,7 +24,7 @@ npx skills add microsoft/eval-guide
 | Skill | Command | What it does |
 |-------|---------|-------------|
 | **Eval Guide** | `/eval-guide` | Full eval lifecycle — discover, plan, generate, run, interpret. Start here. |
-| **Eval Suite Planner** | `/eval-suite-planner` | Structured eval plan with scenarios, methods, quality signals, thresholds, and test data strategy |
+| **Eval Suite Planner** | `/eval-suite-planner` | Populated Eval Suite Template workbook plus an interactive HTML review page for eval sets, methods, gates, human inputs, and grader-validation notes |
 | **Eval Generator** | `/eval-generator` | Test cases for single-response and conversation (multi-turn) evaluation modes |
 | **Eval Result Interpreter** | `/eval-result-interpreter` | SHIP / ITERATE / BLOCK verdict with root cause classification |
 | **Eval Triage & Improvement** | `/eval-triage-and-improvement` | Interactive diagnosis and remediation for failing evals |
@@ -40,15 +40,15 @@ Tell me about your agent — what does it do, who uses it, and what does "good" 
 
 Works the same in both Claude Code and GitHub Copilot.
 
-The toolkit walks you through Microsoft's 4-stage evaluation lifecycle:
+The toolkit walks you through five operational stages over Microsoft's ***Practical Guidance on Agent Evaluation* — 10-step playbook** (the canonical methodology spine, in `skills/eval-guide/playbook.md`):
 
-| Stage | What happens | Works without a running agent? |
-|-------|-------------|-------------------------------|
-| **0. Discover** | Articulate what the agent does and what success looks like | Yes |
-| **1. Plan** | Scope eval depth by agent architecture, map to scenario types, pick methods, set thresholds | Yes |
-| **2. Generate & Baseline** | Produce test case CSVs (single-response) or conversation blueprints (multi-turn) importable into Copilot Studio | Yes |
-| **3. Run** | Execute tests against a live agent | Needs running agent |
-| **4. Interpret & Improve** | Triage results, classify root causes, prioritize fixes, re-test | Needs eval results |
+| Stage | What happens | Playbook steps | Works without a running agent? |
+|-------|-------------|----------------|-------------------------------|
+| **0. Discover** | Articulate what the agent does, what success looks like, the eval objective, the agent's risk tier (5 factors), and the owner | Step 1 | Yes |
+| **1. Plan** | Scope eval depth by agent architecture; plan capability vs trust & safety eval sets; set pass-rate targets and hard/soft gates; specify human inputs + source→ground-truth map | Steps 1, 4, 5 | Yes |
+| **2. Generate & Baseline** | Produce capability and trust & safety test-case CSVs (single-response) or conversation blueprints (multi-turn) importable into Copilot Studio; design the regression partition | Steps 2, 3, 8 (design) | Yes |
+| **3. Run** | Execute the baseline against a live agent | Step 6 | Needs running agent |
+| **4. Interpret & Improve** | Triage results, classify each failure (eval-setup vs agent-quality), gate-based verdict, design the optimization loop, flag reusable assets | Steps 7, 9, 10 | Needs eval results |
 
 Stages 0-2 work from just an agent description — no running agent required.
 
@@ -63,8 +63,8 @@ Stage complete → Dashboard opens → You review & edit → Confirm → Final a
 | Stage | What you review in the dashboard | What you can edit |
 |---|---|---|
 | **0. Discover** | Agent Vision (purpose, users, knowledge, capabilities, boundaries, success criteria) | All fields inline, add/remove list items |
-| **1. Plan** | Scenario table, methods, thresholds, quality signals | Add/remove scenarios, change methods, adjust thresholds |
-| **2. Generate** | Test cases per quality signal | Edit expected responses, questions, methods, add/remove cases |
+| **1. Plan** | Populated Eval Suite Template workbook plus HTML review page | Edit workbook cells without changing template structure; use the page to review summary, filters, TBDs, and checklist |
+| **2. Generate** | Test cases per eval set | Edit expected responses, questions, methods, add/remove cases |
 | **4. Interpret** | Verdict, failure triage, root causes, actions | Reclassify root causes, add comments |
 
 Final deliverables (`.docx` reports, `.csv` test sets) are only generated **after you confirm** via the dashboard.
@@ -108,11 +108,11 @@ Most agents benefit from a hybrid: Echo for fast regression, Synthesized persona
 
 | Skill | Artifacts |
 |-------|-----------|
-| `/eval-guide` | Interactive dashboards at each stage, Agent Vision doc, eval plan (.docx), test case CSVs, triage report (.docx) |
-| `/eval-suite-planner` | Eval plan table with scenarios, methods, thresholds, test data strategy, priority order (.docx + .xlsx) |
+| `/eval-guide` | Workbook review plus Generate/Interpret dashboards, populated eval-suite workbook (.xlsx), test case CSVs, triage report (.docx) |
+| `/eval-suite-planner` | Populated Eval Suite Template workbook plus interactive HTML review page with registry, gates, TBDs, baseline placeholders, and reusable candidates |
 | `/eval-generator` | Copilot Studio-importable CSV (single-response) or conversation blueprint + .docx report |
 | `/eval-result-interpreter` | SHIP/ITERATE/BLOCK verdict with root cause analysis and pattern detection |
-| `/eval-triage-and-improvement` | Interactive remediation guidance with specific fixes per quality signal |
+| `/eval-triage-and-improvement` | Interactive remediation guidance with specific fixes per eval-set failure pattern |
 | `/eval-faq` | Answers grounded in MS Learn, Eval Scenario Library, Triage Playbook |
 
 ## Enhanced experience with Copilot Studio plugin (Claude Code)
@@ -207,14 +207,13 @@ eval-guide/
 
 ## Methodology
 
-This toolkit encodes Microsoft's official evaluation framework:
+This toolkit is grounded in Microsoft's ***Practical Guidance on Agent Evaluation* — a 10-step playbook**. The canonical spine lives in [`skills/eval-guide/playbook.md`](skills/eval-guide/playbook.md): plan the effort (risk tier) → build capability eval sets → build trust & safety eval sets → set pass-rate targets & gates → specify human inputs → run the baseline → iterate to diagnose → regression suite → optimization loop → save reusable assets. Supporting Microsoft sources:
 
 - **[Eval Scenario Library](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-checklist)** — 5 business-problem + 9 capability scenario types
-- **[Triage & Improvement Playbook](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-iterative-framework)** — 4-layer root cause classification (eval setup, agent config, knowledge, platform)
+- **[Triage & Improvement Playbook](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-iterative-framework)** — root cause classification (eval-setup vs agent-quality)
 - **[Common Evaluation Approaches](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/common-evaluation-approaches)** — Echo, Historical Replay, Synthesized Personas; code-based vs LLM-judge graders
-- **[Evaluation Checklist](https://github.com/microsoft/PowerPnPGuidanceHub/tree/main/guidance/agentevalguidancekit)** — 4-stage lifecycle (Define, Baseline, Expand, Operationalize)
-- **[Evaluation Frameworks](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/evaluation-frameworks)** — 11 scenario validation themes
-- **MS Learn agent evaluation docs** — test methods, quality signals, comparative testing, rubric-based grading
+- **[Evaluation Frameworks](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/evaluation-frameworks)** — scenario validation themes
+- **MS Learn agent evaluation docs** — test methods, comparative testing, rubric-based grading
 
 ## Contributing
 

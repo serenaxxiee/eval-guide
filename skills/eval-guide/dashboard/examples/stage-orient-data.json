@@ -95,8 +95,8 @@
       "phase": "Developing core eval sets",
       "items": [
         "Agent Vision (confirmed in conversation)",
-        "Eval plan with acceptance criteria and Value × Cost matrix (.docx)",
-        "Test case CSVs importable into Copilot Studio (.csv per quality signal)"
+        "Populated Eval Suite Template workbook (.xlsx)",
+        "Test case CSVs importable into Copilot Studio (.csv per eval set)"
       ]
     },
     {

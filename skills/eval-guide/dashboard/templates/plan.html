@@ -1,7 +1,7 @@
-<!-- Stage 1: Plan — Eval Plan Review (Value × Cost-of-Failure matrix) -->
+<!-- Legacy Stage 1: Plan — criteria dashboard. The v5 workflow uses workbook review instead. -->
 
 <style>
-/* Value × Cost matrix — 2x2 drag-and-drop */
+/* Legacy 2x2 prioritization matrix — drag-and-drop */
 .matrix-intro {
   font-size: 0.85rem;
   color: var(--text);
@@ -296,27 +296,27 @@
 .dim-bar-add:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 
-<!-- Section 1: Value × Cost matrix -->
+<!-- Section 1: Legacy prioritization matrix -->
 <div class="section">
-  <div class="section-header"><span data-tooltip="Each acceptance criterion belongs in one quadrant based on (a) the VALUE of getting it right and (b) the RISK if it fails. Drag cards between quadrants. Pass/fail for each test case lives in each criterion's own pass/fail conditions — not a prescribed percentage threshold.">Value × Risk Matrix</span></div>
+  <div class="section-header"><span data-tooltip="Legacy pre-v5 criteria prioritization dashboard. The current v5 workflow uses the Eval Suite Template workbook as the Plan review checkpoint.">Legacy Prioritization Matrix</span></div>
   <div class="section-body">
     <div class="matrix-intro">
       Each acceptance criterion is placed in one of four quadrants based on <strong>Value</strong> (how much does getting it right drive the product?) and <strong>Risk</strong> (how much harm does a failure cause?). Drag criteria between quadrants as your thinking evolves.
       <div class="matrix-legend">
         <div class="matrix-legend-item legend-critical">
-          <b>High Value · High Risk</b>
+          <b>Critical capability / gate</b>
           Product-defining capabilities. Most test cases, strictest review.
         </div>
         <div class="matrix-legend-item legend-valuable">
-          <b>High Value · Low Risk</b>
+          <b>Capability coverage</b>
           Expected capabilities users rely on. Occasional misses tolerable.
         </div>
         <div class="matrix-legend-item legend-guardrails">
-          <b>Low Value · High Risk</b>
+          <b>Trust & Safety gate</b>
           Rarely triggered but must never fail. Safety, compliance, refusals.
         </div>
         <div class="matrix-legend-item legend-deprioritize">
-          <b>Low Value · Low Risk</b>
+          <b>Exploratory coverage</b>
           Exploratory or rare. Light coverage; revisit if usage grows.
         </div>
       </div>
@@ -330,19 +330,19 @@
 
       <!-- Row 2: HIGH VALUE row -->
       <div class="matrix-y-label">High value</div>
-      <!-- Top-left: High Value · Low Risk -->
+      <!-- Top-left: capability coverage -->
       <div class="quadrant" id="quadrant-valuable" data-quadrant="valuable">
         <div class="quadrant-header quadrant-header-valuable">
-          <span data-tooltip="High Value · Low Risk: the agent's expected capabilities — users rely on these and notice when they're off, but a miss isn't catastrophic. Invest in solid coverage.">High Value · Low Risk</span>
+          <span data-tooltip="Capability coverage: expected capabilities users rely on. Invest in solid coverage and regression tracking.">Capability coverage</span>
           <span class="quadrant-subtitle" id="quadrant-valuable-count"></span>
         </div>
         <div class="quadrant-items" id="quadrant-items-valuable"></div>
         <input class="quadrant-add-input" placeholder="+ The agent should..." data-quadrant="valuable" onkeydown="onAddKeydown(event)">
       </div>
-      <!-- Top-right: High Value · High Risk -->
+      <!-- Top-right: critical capability / gate -->
       <div class="quadrant" id="quadrant-critical" data-quadrant="critical">
         <div class="quadrant-header quadrant-header-critical">
-          <span data-tooltip="High Value · High Risk: product-defining capabilities where a miss hurts. Heaviest investment — most test cases, strictest acceptance criteria, human review mandatory.">High Value · High Risk</span>
+          <span data-tooltip="Critical capability / gate: product-defining capabilities or deployment-critical checks. Heaviest investment and human review.">Critical capability / gate</span>
           <span class="quadrant-subtitle" id="quadrant-critical-count"></span>
         </div>
         <div class="quadrant-items" id="quadrant-items-critical"></div>
@@ -351,19 +351,19 @@
 
       <!-- Row 3: LOW VALUE row -->
       <div class="matrix-y-label">Low value</div>
-      <!-- Bottom-left: Low Value · Low Risk -->
+      <!-- Bottom-left: exploratory coverage -->
       <div class="quadrant" id="quadrant-deprioritize" data-quadrant="deprioritize">
         <div class="quadrant-header quadrant-header-deprioritize">
-          <span data-tooltip="Low Value · Low Risk: exploratory or rarely exercised behaviors. Test lightly; revisit if usage grows or stakes change.">Low Value · Low Risk</span>
+          <span data-tooltip="Exploratory coverage: rarely exercised behaviors. Test lightly; revisit if usage grows or stakes change.">Exploratory coverage</span>
           <span class="quadrant-subtitle" id="quadrant-deprioritize-count"></span>
         </div>
         <div class="quadrant-items" id="quadrant-items-deprioritize"></div>
         <input class="quadrant-add-input" placeholder="+ The agent should..." data-quadrant="deprioritize" onkeydown="onAddKeydown(event)">
       </div>
-      <!-- Bottom-right: Low Value · High Risk -->
+      <!-- Bottom-right: Trust & Safety gate -->
       <div class="quadrant" id="quadrant-guardrails" data-quadrant="guardrails">
         <div class="quadrant-header quadrant-header-guardrails">
-          <span data-tooltip="Low Value · High Risk: low-traffic behaviors where a failure causes real harm — safety refusals, compliance boundaries, escalation. Zero tolerance for failure; invest in negative tests and adversarial cases.">Low Value · High Risk</span>
+          <span data-tooltip="Trust & Safety gate: safety refusals, compliance boundaries, escalation, and adversarial cases. Failures can block release.">Trust & Safety gate</span>
           <span class="quadrant-subtitle" id="quadrant-guardrails-count"></span>
         </div>
         <div class="quadrant-items" id="quadrant-items-guardrails"></div>
@@ -411,10 +411,10 @@
 <script>
 const QUADRANTS = ["critical", "valuable", "guardrails", "deprioritize"];
 const QUADRANT_LABELS = {
-  critical: "High Value · High Risk",
-  valuable: "High Value · Low Risk",
-  guardrails: "Low Value · High Risk",
-  deprioritize: "Low Value · Low Risk",
+  critical: "Critical capability / gate",
+  valuable: "Capability coverage",
+  guardrails: "Trust & Safety gate",
+  deprioritize: "Exploratory coverage",
 };
 const Q_BADGE_CSS = {
   critical: "q-badge-critical",
@@ -510,7 +510,7 @@ function renderAll() {
   renderDimensions();
 }
 
-// ── Value × Cost matrix (drag-and-drop) ──
+// ── Legacy prioritization matrix (drag-and-drop) ──
 
 function renderQuadrants() {
   const totalActive = criteria.filter(c => !c._deleted).length;

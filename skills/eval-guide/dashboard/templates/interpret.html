@@ -1,6 +1,95 @@
-<!-- Stage 4: Interpret — Results Review (Quadrant-based) -->
+<!-- Stage 4: Interpret — Results Review (Gate-based) -->
 
 <style>
+.verdict-grid {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.8fr) minmax(0, 2.2fr);
+  gap: 0.9rem;
+  align-items: stretch;
+}
+@media (max-width: 760px) {
+  .verdict-grid { grid-template-columns: 1fr; }
+}
+.verdict-card {
+  border: 1px solid var(--border);
+  border-left-width: 5px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.85rem 1rem;
+}
+.verdict-ship { border-left-color: var(--green); background: var(--green-wash); }
+.verdict-iterate { border-left-color: var(--yellow); background: var(--yellow-wash); }
+.verdict-block { border-left-color: var(--red); background: var(--red-wash); }
+.verdict-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+.verdict-value {
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--text);
+}
+.verdict-reason {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+.gate-table-wrap { overflow-x: auto; }
+.gate-status {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.gate-pass { background: var(--green-wash); color: var(--green); }
+.gate-miss { background: var(--red-wash); color: var(--red); }
+.gate-info { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+.gate-type {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.playbook-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 0.75rem;
+}
+.playbook-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
+}
+.playbook-step {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+.playbook-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+.playbook-copy {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
 .q-badge-sm {
   display: inline-block;
   padding: 0.05rem 0.4rem;
@@ -339,10 +428,73 @@
 }
 </style>
 
-<!-- Section 1: Pass Rate Overview -->
+<!-- Section 1: Guidance Playbook Alignment -->
+<div class="section">
+  <div class="section-header">
+    <span data-tooltip="Stage 4 is the Interpret portion of the 10-step playbook: read the baseline, diagnose failures, and design the operational improvement loops.">10-Step Playbook Alignment</span>
+  </div>
+  <div class="section-body">
+    <div class="playbook-grid">
+      <div class="playbook-card">
+        <div class="playbook-step">Step 6</div>
+        <div class="playbook-title">Baseline evidence</div>
+        <div class="playbook-copy">Start from exported run results: per-set pass rates, judge rationale, and version/timestamp evidence.</div>
+      </div>
+      <div class="playbook-card">
+        <div class="playbook-step">Step 7</div>
+        <div class="playbook-title">Diagnose failures</div>
+        <div class="playbook-copy">Classify each failure as eval-setup or agent-quality before assigning a fix owner.</div>
+      </div>
+      <div class="playbook-card">
+        <div class="playbook-step">Step 9</div>
+        <div class="playbook-title">Optimization loop</div>
+        <div class="playbook-copy">Turn production signals into new fixes, new eval cases, or rubric changes, then re-run the regression suite.</div>
+      </div>
+      <div class="playbook-card">
+        <div class="playbook-step">Step 10</div>
+        <div class="playbook-title">Reusable assets</div>
+        <div class="playbook-copy">Promote reusable rubrics and trust & safety sets into Required, Recommended, or Opt-in library candidates.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Gate Verdict -->
+<div class="section">
+  <div class="section-header">
+    <span data-tooltip="Ship readiness is decided by the hard and soft gates defined in the eval manifest, not by aggregate pass rate. Quadrant pass rates remain supporting evidence for prioritization.">Gate Verdict</span>
+  </div>
+  <div class="section-body">
+    <div class="verdict-grid">
+      <div class="verdict-card" id="verdict-card">
+        <div class="verdict-label">Verdict</div>
+        <div class="verdict-value" id="verdict-value">—</div>
+        <div class="verdict-reason" id="verdict-reason"></div>
+      </div>
+      <div class="gate-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Eval set</th>
+              <th>Type</th>
+              <th>Category / dimension</th>
+              <th>Target</th>
+              <th>Actual</th>
+              <th>Gate</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="gate-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Pass Rate Overview -->
 <div class="section">
   <div class="section-header flex-between">
-    <span data-tooltip="Pass-rate rollup by quadrant. High Value · High Risk failures matter most — read this view first to see where effort should focus.">Pass Rate Overview</span>
+    <span data-tooltip="Pass-rate rollup by quadrant. This is supporting evidence for prioritization; the gate verdict above decides ship readiness.">Pass Rate Overview</span>
     <span class="text-sm text-muted" id="metrics-status-count"></span>
   </div>
   <div class="section-body">
@@ -350,7 +502,7 @@
   </div>
 </div>
 
-<!-- Section 2: Human – AI Judge Alignment -->
+<!-- Section 4: Human – AI Judge Alignment -->
 <div class="section">
   <div class="section-header">
     <span data-tooltip="The AI judge produced a Pass/Fail verdict for every test case. Expand each criterion, read the Expected vs. Actual, then mark Agree or Disagree on the judge's verdict. Disagreements are auto-promoted to Failure Triage as eval-setup issues. Calibrate the judge against your human read before trusting its aggregate metrics.">Human – AI Judge Alignment</span>
@@ -363,6 +515,7 @@
           <th style="width:40%">Criterion (The agent should...)</th>
           <th style="width:18%">Quality Dimension</th>
           <th style="width:80px">Pass Rate</th>
+          <th style="width:90px">Gate</th>
           <th style="width:130px">Results</th>
         </tr>
       </thead>
@@ -371,10 +524,10 @@
   </div>
 </div>
 
-<!-- Section 2: Failure Triage -->
+<!-- Section 5: Failure Triage -->
 <div class="section">
   <div class="section-header flex-between">
-    <span data-tooltip="Root cause classification of each failed test case. Distinguishing eval setup issues (bad test data) from real agent problems (wrong config) prevents wasted effort fixing the wrong thing.">Failure Triage</span>
+    <span data-tooltip="Step 7 root cause classification. First decide whether the failure is an eval-setup problem or an agent-quality problem; then use the subtype to assign the fix.">Failure Triage</span>
     <span class="text-sm text-muted" id="failure-count"></span>
   </div>
   <div class="section-body" style="padding:0;overflow-x:auto;">
@@ -386,7 +539,7 @@
           <th style="width:20%">Question</th>
           <th style="width:18%">Expected</th>
           <th style="width:18%">Actual</th>
-          <th style="width:130px">Root Cause</th>
+          <th style="width:150px">Step 7 Root Cause</th>
         </tr>
       </thead>
       <tbody id="failure-tbody"></tbody>
@@ -394,13 +547,13 @@
   </div>
 </div>
 
-<!-- Section 4: Patterns -->
+<!-- Section 6: Patterns -->
 <div class="section">
   <div class="section-header"><span data-tooltip="Cross-cutting failure patterns — what's actually broken, not just where. Each card leads with the key signal (a stat or one-line diagnosis), with supporting detail underneath. Top Actions below are derived from these.">Patterns</span></div>
   <div class="section-body" id="patterns-list"></div>
 </div>
 
-<!-- Section 5: Top Actions -->
+<!-- Section 7: Top Actions -->
 <div class="section">
   <div class="section-header"><span data-tooltip="Suggested fixes derived from the Patterns above. Each action is tagged by category — Topic, Knowledge Source, Test Data, Test Profile, Agent Config — so you can see at a glance what kind of change is being proposed. Re-run the full eval set after each change to catch regressions elsewhere.">Top Actions <span class="text-sm text-muted" style="font-weight:400;">— derived from Patterns</span></span></div>
   <div class="section-body" id="actions-list"></div>
@@ -409,10 +562,10 @@
 <script>
 const QUADRANTS_ORDER = ["critical", "valuable", "guardrails", "deprioritize"];
 const QUADRANT_LABELS = {
-  critical: "High Value · High Risk",
-  valuable: "High Value · Low Risk",
-  guardrails: "Low Value · High Risk",
-  deprioritize: "Low Value · Low Risk",
+  critical: "Critical capability / gate",
+  valuable: "Capability coverage",
+  guardrails: "Trust & Safety gate",
+  deprioritize: "Exploratory coverage",
 };
 const Q_BADGE_CSS = {
   critical: "q-badge-sm-critical",
@@ -427,9 +580,18 @@ const Q_CARD_CSS = {
   deprioritize: "qsc-deprioritize",
 };
 const ROOT_CAUSES = ["eval_setup", "agent_config", "platform_limitation"];
-const ROOT_CAUSE_LABELS = {eval_setup: "Eval Setup Issue", agent_config: "Agent Config Issue", platform_limitation: "Platform Limitation"};
+const ROOT_CAUSE_LABELS = {
+  eval_setup: "Eval Setup",
+  agent_config: "Agent Quality — Config",
+  platform_limitation: "Agent Quality — Platform"
+};
 
 let evalResults = [];
+let rawMetrics = [];
+let rawFailures = [];
+let rawEvalSets = [];
+let computedVerdict = null;
+let computedGateSummary = [];
 
 function zoneToQuadrant(zone) {
   const z = String(zone || "");
@@ -445,6 +607,14 @@ function normalizeCriterionMetric(raw) {
     statement: raw.statement || raw.name || "",
     quadrant: raw.quadrant || zoneToQuadrant(raw.zone),
     quality_dimension: raw.quality_dimension || "",
+    eval_set_id: raw.eval_set_id || raw.eval_set || raw.quality_dimension || "",
+    set_type: raw.set_type || "",
+    category: raw.category || raw.trust_safety_category || raw.quality_dimension || "",
+    method: raw.method || raw.testing_method || "",
+    regression_class: raw.regression_class || "",
+    target_pass_rate: normalizeRate(raw.target_pass_rate ?? raw.target ?? raw.pass_rate_target),
+    gate: raw.gate || raw.gate_type || "",
+    deployment_critical: Boolean(raw.deployment_critical),
     actual_pass_rate: raw.actual_pass_rate || 0,
     cases_total: raw.cases_total || 0,
     cases_passed: raw.cases_passed || 0,
@@ -467,6 +637,27 @@ function normalizeFailure(raw) {
   };
 }
 
+function normalizeRate(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return n <= 1 ? Math.round(n * 100) : Math.round(n);
+}
+
+function normalizeEvalSet(raw) {
+  return {
+    id: raw.id || raw.eval_set_id || raw.name || raw.quality_dimension || raw.category || "",
+    name: raw.name || raw.eval_set || raw.quality_dimension || raw.category || "",
+    set_type: raw.set_type || "",
+    category: raw.category || raw.trust_safety_category || raw.quality_dimension || "",
+    method: raw.method || raw.testing_method || "",
+    regression_class: raw.regression_class || "",
+    target_pass_rate: normalizeRate(raw.target_pass_rate ?? raw.target ?? raw.pass_rate_target),
+    gate: raw.gate || raw.gate_type || "",
+    deployment_critical: Boolean(raw.deployment_critical),
+  };
+}
+
 function rateClass(rate) {
   if (rate >= 90) return "rate-high";
   if (rate >= 70) return "rate-mid";
@@ -476,12 +667,174 @@ function rateClass(rate) {
 function stageInit() {
   const d = EMBEDDED_DATA.data;
   evalResults = (d.eval_results || []).map(normalizeEvalResult);
-  const metrics = (d.criterion_metrics || d.success_metrics || []).map(normalizeCriterionMetric);
-  const failures = (d.failures || []).map(normalizeFailure);
-  renderMetricsStatus(metrics);
-  renderFailures(failures);
+  rawMetrics = (d.criterion_metrics || d.success_metrics || []).map(normalizeCriterionMetric);
+  rawFailures = (d.failures || []).map(normalizeFailure);
+  rawEvalSets = (d.eval_sets || d.gate_summary || []).map(normalizeEvalSet);
+  renderInterpretDashboard();
+  renderFailures(rawFailures);
   renderActions(d.top_actions || []);
   renderPatterns(d.patterns || []);
+}
+
+function renderInterpretDashboard() {
+  const metrics = adjustedMetrics();
+  const gateSummary = computeGateSummary(metrics);
+  const verdict = computeVerdict(gateSummary);
+  renderGateVerdict(verdict, gateSummary);
+  renderMetricsStatus(metrics);
+}
+
+function adjustedMetrics() {
+  return rawMetrics.map(m => {
+    const criterionCases = evalResults.filter(r => r.criterion_id === m.criterion_id);
+    if (criterionCases.length === 0) return {...m};
+
+    let passed = 0;
+    criterionCases.forEach((c, idx) => {
+      const caseKey = m.criterion_id + "_" + idx;
+      if (c.pass || humanDisagrees[caseKey]) passed++;
+    });
+
+    const total = criterionCases.length;
+    return {
+      ...m,
+      cases_total: total,
+      cases_passed: passed,
+      actual_pass_rate: total > 0 ? Math.round(passed / total * 100) : 0,
+    };
+  });
+}
+
+function computeGateSummary(metrics) {
+  const sets = {};
+  rawEvalSets.forEach(s => {
+    const id = s.id || s.name;
+    if (!id) return;
+    sets[id] = {...s, criteria: 0, cases_total: 0, cases_passed: 0};
+  });
+
+  metrics.forEach(m => {
+    const id = m.eval_set_id || m.quality_dimension || "ungrouped";
+    if (!sets[id]) {
+      sets[id] = {
+        id,
+        name: m.quality_dimension || id,
+        set_type: m.set_type,
+        category: m.category || m.quality_dimension || "",
+        method: m.method || "",
+        regression_class: m.regression_class || "",
+        target_pass_rate: m.target_pass_rate,
+        gate: m.gate,
+        deployment_critical: m.deployment_critical,
+        criteria: 0,
+        cases_total: 0,
+        cases_passed: 0,
+      };
+    }
+    const s = sets[id];
+    s.criteria++;
+    s.cases_total += m.cases_total;
+    s.cases_passed += m.cases_passed;
+    if (!s.set_type && m.set_type) s.set_type = m.set_type;
+    if (!s.category && m.category) s.category = m.category;
+    if (!s.method && m.method) s.method = m.method;
+    if (!s.regression_class && m.regression_class) s.regression_class = m.regression_class;
+    if (s.target_pass_rate === null && m.target_pass_rate !== null) s.target_pass_rate = m.target_pass_rate;
+    if (!s.gate && m.gate) s.gate = m.gate;
+    if (m.deployment_critical) s.deployment_critical = true;
+  });
+
+  return Object.values(sets).map(s => {
+    const actual = s.cases_total > 0 ? Math.round(s.cases_passed / s.cases_total * 100) : normalizeRate(s.actual_pass_rate);
+    const gate = String(s.gate || "").toLowerCase();
+    const target = normalizeRate(s.target_pass_rate);
+    let status = "info";
+    if (gate && target !== null) status = actual >= target ? "pass" : "miss";
+    return {...s, actual_pass_rate: actual || 0, target_pass_rate: target, gate, gate_status: status};
+  });
+}
+
+function computeVerdict(gateSummary) {
+  const gated = gateSummary.filter(s => s.gate && s.target_pass_rate !== null);
+  if (gated.length === 0) {
+    return {
+      value: "ITERATE",
+      className: "verdict-iterate",
+      reason: "No gate metadata was provided. Treat this as an inferred baseline and review gates with the owner before shipping.",
+    };
+  }
+
+  const hardMisses = gated.filter(s => s.gate === "hard" && s.gate_status === "miss");
+  const softMisses = gated.filter(s => s.gate === "soft" && s.gate_status === "miss");
+
+  if (hardMisses.length > 0) {
+    const blocking = hardMisses.some(s => s.set_type === "trust_safety" || s.deployment_critical);
+    return {
+      value: blocking ? "BLOCK" : "ITERATE",
+      className: blocking ? "verdict-block" : "verdict-iterate",
+      reason: blocking
+        ? "At least one hard trust & safety or deployment-critical gate missed its target."
+        : "At least one hard gate missed its target; fix and re-run before shipping.",
+    };
+  }
+
+  if (softMisses.length > 0) {
+    return {
+      value: "ITERATE",
+      className: "verdict-iterate",
+      reason: "All hard gates passed, but one or more soft targets missed.",
+    };
+  }
+
+  return {
+    value: "SHIP",
+    className: "verdict-ship",
+    reason: "All hard gates passed and all soft targets met.",
+  };
+}
+
+function renderGateVerdict(verdict, gateSummary) {
+  computedVerdict = verdict;
+  computedGateSummary = gateSummary;
+
+  const card = document.getElementById("verdict-card");
+  card.className = "verdict-card " + verdict.className;
+  document.getElementById("verdict-value").textContent = verdict.value;
+  document.getElementById("verdict-reason").textContent = verdict.reason;
+
+  const tbody = document.getElementById("gate-tbody");
+  if (!gateSummary || gateSummary.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-sm text-muted" style="text-align:center;padding:1rem;">No gate metadata provided.</td></tr>';
+  } else {
+    tbody.innerHTML = gateSummary.map(s => {
+      const statusClass = s.gate_status === "pass" ? "gate-pass" : s.gate_status === "miss" ? "gate-miss" : "gate-info";
+      const statusLabel = s.gate_status === "pass" ? "PASS" : s.gate_status === "miss" ? "MISS" : "INFO";
+      const target = s.target_pass_rate === null ? "—" : s.target_pass_rate + "%";
+      const gate = s.gate ? s.gate : "informational";
+      return '<tr>' +
+        '<td class="text-sm" style="font-weight:500;">' + escapeHtml(s.name || s.id || "") + '</td>' +
+        '<td class="text-sm">' + escapeHtml(s.set_type || "—") + '</td>' +
+        '<td class="text-sm">' + escapeHtml(s.category || "—") + '</td>' +
+        '<td class="text-sm" style="text-align:right;font-family:var(--mono);">' + target + '</td>' +
+        '<td class="text-sm" style="text-align:right;font-family:var(--mono);">' + s.actual_pass_rate + '%</td>' +
+        '<td><span class="gate-type">' + escapeHtml(gate) + '</span></td>' +
+        '<td><span class="gate-status ' + statusClass + '">' + statusLabel + '</span></td>' +
+      '</tr>';
+    }).join("");
+  }
+
+  edits["computed_verdict"] = JSON.stringify(verdict);
+  edits["gate_summary"] = JSON.stringify(gateSummary);
+}
+
+function metricGateLabel(m) {
+  const gateSummary = computedGateSummary || [];
+  const setId = m.eval_set_id || m.quality_dimension || "ungrouped";
+  const s = gateSummary.find(g => g.id === setId || g.name === setId);
+  if (!s || !s.gate) return '<span class="gate-status gate-info">INFO</span>';
+  const statusClass = s.gate_status === "pass" ? "gate-pass" : s.gate_status === "miss" ? "gate-miss" : "gate-info";
+  const label = s.gate_status === "pass" ? "PASS" : s.gate_status === "miss" ? "MISS" : "INFO";
+  return '<span class="gate-status ' + statusClass + '">' + label + '</span><div class="gate-type">' + escapeHtml(s.gate) + '</div>';
 }
 
 function renderMetricsStatus(metrics) {
@@ -538,6 +891,7 @@ function renderMetricsStatus(metrics) {
       '<td class="text-sm" style="font-weight:500;">' + (hasDetails ? '<span class="expand-icon">&#x25B6;</span>' : '<span style="width:1em;display:inline-block;"></span>') + escapeHtml(m.statement || "") + '</td>' +
       '<td class="text-sm">' + escapeHtml(m.quality_dimension || "") + '</td>' +
       '<td class="text-sm" style="text-align:right;font-family:var(--mono);"><span class="' + rateClass(m.actual_pass_rate) + '">' + m.actual_pass_rate + '%</span></td>' +
+      '<td>' + metricGateLabel(m) + '</td>' +
       '<td><span class="metric-bar-bg"><span class="metric-bar-fill" style="width:' + Math.min(100, m.actual_pass_rate) + '%;background:' + barColor + ';"></span></span>' +
       ' <span class="text-sm text-muted">' + m.cases_passed + '/' + m.cases_total + '</span></td>';
     tbody.appendChild(tr);
@@ -546,12 +900,14 @@ function renderMetricsStatus(metrics) {
       const detailTr = document.createElement("tr");
       detailTr.className = "metric-detail-row";
       detailTr.id = rowId;
-      let cardsHtml = '<td colspan="5" style="padding:0;"><div class="case-cards">';
+      let cardsHtml = '<td colspan="6" style="padding:0;"><div class="case-cards">';
       criterionCases.forEach((c, cIdx) => {
         const caseKey = m.criterion_id + "_" + cIdx;
         const rationaleId = "rationale-" + String(m.criterion_id) + "-" + cIdx;
         const scoreText = c.score !== undefined ? c.score.toFixed(2) : "—";
         const resultHtml = c.pass ? '<span class="detail-pass">Pass</span>' : '<span class="detail-fail">Fail</span>';
+        const judgementValue = humanDisagrees[caseKey] ? "disagree" : "";
+        const judgementClass = judgementValue ? " " + judgementValue : "";
         cardsHtml += '<div class="case-card">' +
           '<div class="case-q">' +
             '<span class="case-q-label">Q</span>' +
@@ -575,10 +931,10 @@ function renderMetricsStatus(metrics) {
             '</div>' +
             '<div class="case-judgement">' +
               '<span class="case-judgement-label">Your judgement:</span>' +
-              '<select class="judgement-select" data-case-key="' + caseKey + '" data-criterion-id="' + m.criterion_id + '" data-question="' + escapeAttr(c.question || "") + '" data-expected="' + escapeAttr(truncate(c.expected || "", 100)) + '" data-actual="' + escapeAttr(truncate(c.actual || "", 100)) + '" data-quadrant="' + m.quadrant + '" data-criterion-statement="' + escapeAttr(m.statement || "") + '" data-quality-dim="' + escapeAttr(m.quality_dimension || "") + '" onchange="onJudgementChange(this)">' +
-                '<option value="">—</option>' +
+              '<select class="judgement-select' + judgementClass + '" data-case-key="' + caseKey + '" data-criterion-id="' + m.criterion_id + '" data-question="' + escapeAttr(c.question || "") + '" data-expected="' + escapeAttr(truncate(c.expected || "", 100)) + '" data-actual="' + escapeAttr(truncate(c.actual || "", 100)) + '" data-quadrant="' + m.quadrant + '" data-criterion-statement="' + escapeAttr(m.statement || "") + '" data-quality-dim="' + escapeAttr(m.quality_dimension || "") + '" onchange="onJudgementChange(this)">' +
+                '<option value=""' + (judgementValue === "" ? " selected" : "") + '>—</option>' +
                 '<option value="agree">Agree</option>' +
-                '<option value="disagree">Disagree</option>' +
+                '<option value="disagree"' + (judgementValue === "disagree" ? " selected" : "") + '>Disagree</option>' +
               '</select>' +
             '</div>' +
           '</div>';
@@ -636,7 +992,8 @@ function onJudgementChange(select) {
   }
 
   const d = EMBEDDED_DATA.data;
-  renderFailures((d.failures || []).map(normalizeFailure));
+  renderInterpretDashboard();
+  renderFailures(rawFailures);
   // Set human_disagrees BEFORE scheduleSave so the saved snapshot includes it.
   // Reverse order would save first (without disagrees) then write to a stale
   // edits object that gets overwritten on the next collectEdits() call.

@@ -1,241 +1,160 @@
 # Eval Suite Planner
 
-Stage 1 standalone — turns an Agent Vision (or plain-English description) into a structured eval plan: 10–15 acceptance criteria phrased "The agent should…", each placed on a Value × Risk matrix (High Value · High Risk / High Value · Low Risk / Low Value · High Risk / Low Value · Low Risk), each with explicit pass/fail conditions and a test method. Output is a customer-ready `.docx` eval plan. Use before generating test cases or running any evals.
-
+Plan standalone — populates the Eval Suite Planning & Logging Template from an Agent Vision or plain-English agent description. Grounded in Practical Guidance on Agent Evaluation v5: Step 1 planning, Steps 2-3 eval-set decomposition, Step 4 gates/improvement targets, Step 5 human inputs, Step 6 grader-validation planning, Step 7 baseline placeholders, Step 8 regression partitioning, and Step 10 reusable-asset candidates. Output is a template-preserving `.xlsx` workbook plus an interactive HTML review page. Use before generating test cases or running evals.
 
 ## Purpose
 
-This skill produces the **Stage 1** artifact of the `/eval-guide` lifecycle: a written eval plan that a customer's PM, security partner, or business owner can sign off on. It works **without a running agent** — a description, idea, or written Vision is enough. The plan defines what the agent SHOULD do; later stages turn it into test cases and run them.
+This prompt produces the **Plan** artifact of the `/eval-guide` lifecycle: a populated copy of the customer's **Eval Suite Planning & Logging Template** plus an interactive HTML review page. The workbook is the source-of-truth artifact; do not replace it with a scenario table, quality-signal table, generic spreadsheet, default `.docx` report, or HTML-only plan.
 
-This is the standalone form of `/eval-guide` Stage 1. Use it when the customer already has an Agent Vision and wants the plan directly, or when a Stage 1 re-plan is needed for a specific feature without re-orienting the whole session. The orchestrator `/eval-guide` invokes the same methodology with its own dashboard checkpoint.
+The prompt aligns to `skills/eval-guide/playbook.md` and `skills/eval-guide/eval-suite-template.md`. Use the 10-step playbook as the methodology spine and the XLSX template as the output shape.
 
-**Knowledge sources:**
-- Microsoft's [evaluation iterative framework](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-iterative-framework) and [evaluation checklist](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-checklist).
-- [Eval Scenario Library](https://github.com/microsoft/ai-agent-eval-scenario-library) — quality signals and method-mapping guidance.
-- [Triage & Improvement Playbook](https://github.com/microsoft/triage-and-improvement-playbook) — what makes a criterion testable.
+## Core rule
 
-**Maturity callout — Pillar 1 (Define what "good" means):** Stage 1 advances Pillar 1 from `L100 Initial` ("good lives in the builder's head") to `L300 Systematic` ("written acceptance criteria with pass/fail conditions, tied to eval methods"). The eval plan IS the Pillar 1 artifact.
+**Copy the blank XLSX template and populate existing cells/rows only. Do not modify the template.**
 
-## Instructions
+Do not rename sheets, add sheets, delete sheets, add columns, change headers, rewrite README text, edit `Dropdown Lists`, change styles, change data validation, or convert the template into a different spreadsheet.
+
+If a blank template workbook is available in the session, use it. If not, ask the user to provide the template; do not silently invent a new workbook.
+
+## Question policy
+
+Ask targeted questions only when a workbook field materially affects the plan and cannot be inferred safely:
+
+1. Eval owner / named approver.
+2. Lifecycle stage and target deployment decision.
+3. Whether the agent is prompt-only, RAG/knowledge-grounded, or agentic with tools/connectors.
+4. Regulated/compliance obligations.
+5. Authoritative sources and source owners.
+
+If the user wants speed or cannot answer, populate `TBD - confirm before baseline`.
+
+## Planning method
 
 When invoked as `/eval-suite-planner <agent description>`:
 
-1. Extract or accept the Agent Vision (purpose, users, knowledge, capabilities, boundaries, success criteria, risk profile).
-2. Determine eval depth from agent architecture (prompt-level / RAG / agentic) — under-test simple agents, over-test complex ones, scope to fit.
-3. Produce **10–15 acceptance criteria** phrased *"The agent should…"* (or *"should NOT…"* for negative tests).
-4. Place each criterion on the **Value × Risk matrix** (4 quadrants).
-5. Consolidate quality dimensions to **4–6 broad categories** (e.g., "Accuracy", "Grounding", "Boundaries / Safety", "Tone").
-6. Assign a test method per criterion (Compare meaning / General quality / Keyword match / Capability use / Custom / Text similarity / Exact match).
-7. Write explicit pass/fail conditions per criterion — testable from the criterion alone.
-8. Run distribution sanity-check (red flags only).
-9. Output the customer-ready `.docx` eval plan.
+1. Extract or infer the agent's purpose, users, knowledge sources, capabilities, boundaries, architecture, lifecycle stage, and known risks.
+2. Populate **Step 1 — Plan the Eval Effort**:
+   - one-sentence eval objective;
+   - five-factor risk tier: reach, criticality of error, autonomy/blast radius, regulatory/compliance exposure, data sensitivity;
+   - one accountable owner.
+3. Define eval sets, not scenarios:
+   - **Capability eval sets**: one row per capability dimension that must be diagnostic, e.g. accuracy/correctness, faithfulness/groundedness, relevancy, style/tone, reasoning/tool use.
+   - **Trust & Safety eval sets**: one row per refusal, boundary, or safety category, e.g. guardrails, out-of-scope handling, sensitive-data handling, prompt injection/jailbreak, compliance-specific behavior.
+4. Apply **Step 4 v5 gates/improvement-target logic**:
+   - T&S sets use absolute pass-rate hard gates, usually near 100%.
+   - Capability sets usually use a launch floor for first deployment plus regression/direction after baseline, not a standing absolute pass-rate target.
+   - High-risk capabilities that function like guardrails keep explicit hard floors.
+   - Use the template's existing `Target pass rate`, `Target rationale`, `Gate type`, `Intended use`, `Run cadence`, and `Notes` columns to express this; do not add a new column.
+5. Specify **Step 5 human inputs**:
+   - grading rubric, ground truth, golden answer, or rubric + ground truth;
+   - author/owner;
+   - grounding source dependency;
+   - whether source changes require review.
+6. Plan **Step 6 grader validation** without changing the template:
+   - record grader type and validation expectation in the registry row's `Notes`;
+   - for LLM-as-judge / Custom rubrics, note that human-labeled hard and borderline cases must validate the judge before baseline scores are trusted;
+   - for programmatic checks, note the deterministic check to confirm;
+   - for human grading, note reviewer agreement expectations where relevant.
+7. Seed **Step 7 baseline placeholders** in `3 . Run Log` only when useful:
+   - one placeholder row per eval set;
+   - `Run type = Baseline`;
+   - result fields blank;
+   - `Actionable next step = Validate grader, then run baseline`;
+   - `Status = Open`.
+8. Apply **Step 8 regression partitioning** in existing registry fields:
+   - capability sets usually `Intended use = Both` or `Regression`;
+   - most T&S sets are `Gate`; the slim subset likely affected by model/tool/policy changes can be `Both` or `Regression`;
+   - set `Run cadence` using existing dropdown values such as `Per-change`, `Nightly`, `Weekly`, or `Milestone-only`.
+9. Flag **Step 10 reusable assets** in `4 . Reusable Library`:
+   - reusable T&S sets;
+   - grading rubrics;
+   - failure-pattern templates;
+   - production-derived edge-case categories when applicable.
 
-Do not pad responses. Do not hedge. Be specific to the described agent — no generic advice.
+## Workbook population rules
 
----
+Use `skills/eval-guide/eval-suite-template.md` as the exact tab/column map.
 
-### Step 1 — Determine eval depth from architecture
+### `README`
 
-| Architecture | What it is | Eval layers to apply |
-|---|---|---|
-| **Prompt-level** | Single-turn LLM call, fixed system prompt, no retrieval, no tools | Acceptance criteria + safety/refusal |
-| **RAG** | Retrieves from knowledge sources before responding | + Grounding + citation accuracy + hallucination prevention |
-| **Agentic** | Routes between topics, tools, or connectors | + Tool/topic routing accuracy + slot extraction + multi-step task completion |
+Do not edit.
 
-The architecture call drives which capability families apply. Don't write tool-routing tests for a simple FAQ bot.
+### `1 . Planning`
 
----
+Populate only existing input cells:
 
-### Step 2 — Acceptance criteria on the Value × Risk matrix
+- Agent identity.
+- Risk classification (5 factors).
+- Owners & roles.
+- Deployment gates / sign-off criteria.
 
-Each criterion belongs in **one quadrant** based on two judgments:
-- **Value** — how much does getting this right drive the agent's mission?
-- **Risk** — how much harm does failure cause (financial, safety, compliance, trust)?
+For the template's `Min pass rate - Capability` row, reflect v5 Step 4 accurately: use launch floor / high-risk capability floor / regression-governance language, not a generic per-scenario target.
 
-|  | **Low risk** | **High risk** |
-|---|---|---|
-| **High value** | **High Value · Low Risk** — expected capabilities users rely on. Solid coverage; occasional misses tolerable. | **High Value · High Risk** — product-defining; failure hurts. Heaviest investment, strictest review. |
-| **Low value** | **Low Value · Low Risk** — exploratory or rare. Light coverage; revisit if usage grows. | **Low Value · High Risk** — rarely triggered but must never fail. Safety, compliance, refusals. Zero tolerance. |
+### `2 . Eval Suite Registry`
 
-**The matrix tells you where to invest test-writing effort, not numeric thresholds.** High Value · High Risk gets the most cases, Low Value · Low Risk the fewest, Low Value · High Risk the strictest review. Pass/fail per case lives in each criterion's own pass/fail conditions — not a prescribed percentage threshold.
+Populate one row per eval set. Do **not** populate one row per test case or legacy planning artifact.
 
----
+Required row semantics:
 
-### Step 3 — Distribution sanity-check (reference, not gate)
+- `Category`: `Capability` or `Trust & Safety`.
+- `Dimension tested`: capability dimension or T&S category from the template dropdowns.
+- `Purpose / diagnostic signal`: what failure in this set diagnoses.
+- `Target pass rate`: absolute gate for T&S; launch floor or `Regression / direction after baseline` for most capability sets.
+- `Target rationale`: v5 Step 4 rationale.
+- `Gate type`: closest existing dropdown value.
+- `Intended use`: `Gate`, `Regression`, or `Both`.
+- `Run cadence`: cadence for Step 8.
+- `Human input type`, `Human input author`, `Grounding source dependency`, `Source change -> review?`: Step 5.
+- `Reusable asset?`, `Reuse tier`, `Set status`: Step 10 and lifecycle status.
+- `Notes`: assumptions, open questions, Step 4 nuance, and Step 6 grader-validation plan.
 
-Targets vary by `risk_profile`. **Targets are reference patterns, not gates.** Only push back on red flags.
+### `3 . Run Log`
 
-| Risk profile | High Value · High Risk | High Value · Low Risk | Low Value · High Risk | Low Value · Low Risk | Sanity-check rule |
-|---|---|---|---|---|---|
-| `low`      | 30–50% | 30–50% | 10–20% | 0–20% | At least 1 Low Value · High Risk (always). |
-| `medium`   | 25–40% | 25–40% | 20–30% | 0–15% | At least 1 Low Value · High Risk. |
-| `high`     | 25–40% | 15–30% | 30–50% | 0–10% | **At least 2 Low Value · High Risk (auto-doubled trigger).** |
-| `critical` | 20–35% | 10–20% | 40–60% | 0–5%  | At least 3 Low Value · High Risk. Compliance / Safety domains required. |
+Use this for Step 7 baseline/iteration logging. During planning, add placeholder baseline rows only if useful; keep result fields blank.
 
-**Push back only on these red flags:**
-- 0 Low Value · High Risk on any plan — the agent has no enforced boundaries.
-- 0 High Value · High Risk — the plan has no product-defining tests.
-- >70% High Value · High Risk — every criterion is "the most important." Anchoring bias; force re-evaluation.
-- HIGH-risk profile + <30% Low Value · High Risk — under-investment in failure modes that cause real damage.
-- CRITICAL-risk profile + <40% Low Value · High Risk — same, stricter.
+### `4 . Reusable Library`
 
-Marginal deviations (e.g., High Value · Low Risk at 13% with target 15–30%) are NOT red flags. Do not re-litigate customer-confirmed moves.
+Populate candidate reusable assets only. Do not duplicate every eval set; promote assets that could help other agents.
 
----
+### `Dropdown Lists`
 
-### Step 4 — Adversarial coverage minimums (auto-applied)
+Do not edit.
 
-Every plan needs **at least 1 Low Value · High Risk / Red-Teaming criterion**. The mandate **auto-doubles to 2 minimum** when any of these triggers fire:
+## Output
 
-- Risk profile is HIGH or CRITICAL.
-- Agent touches sensitive-data domains: PII, payments, HR, health, legal, regulated content.
-- Agent has external-customer surface area.
-- Knowledge sources include personal or financial records.
+Create `eval-suite-<agent-name>-<YYYY-MM-DD>.xlsx` as a populated copy of the template.
 
-When a trigger fires, narrate it: *"Your agent matches the sensitive-data trigger ([reason]) — doubling the adversarial coverage mandate from 1 to 2 minimum. Writing at least two adversarial / red-team criteria targeting your specific boundary risks."*
+Then create `eval-suite-<agent-name>-<YYYY-MM-DD>-review.html` next to the workbook using `skills/eval-guide/plan-review-page.md`.
 
-Adversarial gaps are the failure mode that bites in production: the agent passes every High Value · High Risk test and then leaks data on a question no one thought to write a test for.
+Do not paste the summary, eval-set table, or checklist into chat. The HTML page carries that content. The final chat response should be only the workbook path, the HTML review page path, and any blocker/manual action.
 
----
+## Human review checkpoints
 
-### Step 5 — Quality dimensions (consolidate to 4–6)
-
-Group criteria by quality dimension. Default consolidated dimensions:
-- **Accuracy** (covers all knowledge sources — don't fragment into "Policy Accuracy" + "Benefits Accuracy" + "Training Accuracy").
-- **Grounding** (citation, source attribution, hallucination prevention — RAG/agentic only).
-- **Boundaries / Safety** (refusals, compliance, escalation paths).
-- **Routing / Capability** (correct tool/topic invocation — agentic only).
-- **Tone** (when relevant — empathy, brand voice, professionalism).
-- **Personalization** (when role-based access is on).
-
-**Customers fragment dimensions when the AI does.** *"Policy Accuracy / Benefits Accuracy / Training Accuracy"* should be **one** dimension called *"Accuracy"*. The criterion's *statement* already specifies what knowledge it tests — the dimension shouldn't repeat that. Consolidate aggressively.
-
----
-
-### Step 6 — Test methods (per criterion)
-
-Pick the method based on **what you need to verify**, not on familiarity. The signal_type → method mapping:
-
-| Signal type | What you're verifying | Method |
-|---|---|---|
-| **Factual content** (specific facts, numbers, IDs) | Response contains the right facts | `Compare meaning` (paraphrase OK) or `Keyword match` (exact terms required) |
-| **Mandatory wording** (compliance disclaimers, citations) | Specific phrases must appear | `Keyword match` |
-| **Routing / capability** | Agent invoked the right tool or topic | `Capability use` |
-| **Open-ended quality** (tone, helpfulness, completeness) | Subjective rubric, no single right answer | `General quality` |
-| **Domain-specific rubric** (HR / medical / legal / brand) | Custom labeled judgment | `Custom` (with a per-criterion rubric) |
-| **Tight wording** (templates, structured replies) | Wording closeness | `Text similarity` |
-| **Exact strings** (IDs, codes, fixed responses) | Byte-exact match | `Exact match` |
-
-**Reference-free methods** (`General quality`, `Capability use`, `Custom`) grade against the criterion's own pass/fail conditions, not against a per-case reference. They don't need an "expected response" per case in Stage 2.
-
-**`Custom` method**: when you assign Custom to a criterion, also draft a one-paragraph **rubric** from the pass/fail conditions, e.g.:
-> *Rate the response Pass / Fail. Pass = [pass_condition]. Fail = [fail_condition]. Output PASS or FAIL with a one-sentence reason.*
-
-The rubric belongs on the criterion itself (`custom_rubric` field) and is what the LLM judge consumes downstream.
-
----
-
-### Step 7 — Pass/fail conditions per criterion
-
-Every criterion gets explicit **Pass =** and **Fail =** lines.
-
-- Conditions must be testable from the criterion alone — no implicit context.
-- Pass condition names what the response must contain or do.
-- Fail condition names what would constitute a failure (often inverse of pass, sometimes additional bad-states).
-- For negative tests (`should NOT…`), Pass = "agent correctly refused / redirected"; Fail = "agent disclosed / acted".
-
-**Don't prescribe percentage thresholds per criterion.** The quadrant tells you where to invest effort; pass/fail per case lives in the conditions. *"Critical must pass at 90%"* is wrong — pass/fail is per-case, not per-criterion.
-
----
-
-### Step 8 — Coverage check against the Vision
-
-Before locking the plan, walk the Agent Vision and confirm coverage:
-
-- Every named **capability** has ≥ 1 criterion.
-- Every named **boundary** has ≥ 1 criterion (often a Low Value · High Risk).
-- Every named **knowledge source** has ≥ 1 grounding criterion (RAG/agentic only).
-- Every named **user cohort** with role-based access has ≥ 1 personalization criterion.
-
-If a Vision capability has no criterion, surface the gap: *"I noticed Capability X has no criterion — add one or mark it out of scope?"* Don't slide gaps silently.
-
----
-
-### Step 9 — Output: customer-ready `.docx` eval plan
-
-Use the `/docx` skill to generate `eval-plan-<agent-name>-<YYYY-MM-DD>.docx`. The report must be:
-- **Concise** — tables over paragraphs, no filler.
-- **Presentable** — color-coded headers (red / blue / yellow / gray for the four quadrants), clean tables, visual hierarchy.
-- **Self-contained** — a customer who wasn't in the conversation can read it and understand the plan.
-
-**Report structure:**
-
-1. **Agent Vision summary** (5–6 lines max) — purpose, users, knowledge, capabilities, boundaries, success criteria, risk profile.
-2. **Value × Risk matrix overview** — explain the four quadrants and what kinds of criteria belong in each.
-3. **Quadrant assignment** — visual 2×2 matrix with each criterion placed, followed by a table listing criteria grouped by quadrant with pass/fail conditions.
-4. **Quality Dimensions to Test** — list the 4–6 consolidated dimensions, with grouped criteria under each.
-5. **Method mapping explanation** — which methods apply to which criteria and why (reference the signal_type → method table).
-6. **Distribution check** — actual percentages vs. risk-profile targets, with red-flag verdict.
-7. **Adversarial coverage** — count of Low Value · High Risk / red-team criteria; note auto-double trigger if applied.
-8. **Next steps** — *"Run `/eval-generator` on this plan to produce test cases (Stage 2). Then run them against your agent (Stage 3) and triage results with `/eval-result-interpreter` (Stage 4)."*
-9. **Maturity snapshot** — before/after table:
-
-   | Pillar | Baseline | After this plan | Next-session target |
-   |---|---|---|---|
-   | 1 — Define what "good" means | L100 Initial | L300 Systematic ✓ | — |
-   | 2 — Build your eval sets | L100 Initial | L100 Initial | L300 (run `/eval-generator`) |
-   | 4 — Improve and iterate | L100 Initial | L100 Initial | L300 (run `/eval-result-interpreter` after Stage 3) |
-
-Tell the customer: *"Here's your eval plan as a `.docx` — share it with your team. Business and dev should agree on the quadrant assignments before we generate test cases. The quadrant tells you where to focus effort, not a numeric threshold — pass/fail lives in each criterion's own pass/fail conditions."*
-
----
-
-### Step 10 — 🔍 Human Review checkpoints
-
-Display before ending. The plan is the foundation — mistakes here cascade into bad test cases and wasted effort.
+Include these in the HTML review page checklist instead of displaying them in chat:
 
 | # | Checkpoint | What to verify |
 |---|---|---|
-| 1 | **Coverage matches the Vision** | Every named capability, boundary, knowledge source, and user cohort has ≥ 1 criterion. |
-| 2 | **Quadrant placements match risk reality** | A Low Value · High Risk on a payments agent is not the same as one on an internal FAQ. Sense-check with the security/compliance partner. |
-| 3 | **Pass/fail conditions are decidable** | A human grader (or LLM judge) can read each pass/fail and decide the outcome from the response alone. |
-| 4 | **Methods match what you're testing** | Custom for nuanced rubrics, Keyword match for required phrases, Compare meaning for paraphrasable answers. Wrong method = wrong signal. |
-| 5 | **Adversarial coverage feels real** | Low Value · High Risk criteria target *specific* boundary risks for this agent (PII for HR, payment-disclosure for billing, etc.) — not generic prompt-injection boilerplate. |
-| 6 | **Quality dimensions consolidated** | 4–6 dimensions, not 12. "Accuracy" should cover multiple knowledge sources, not be split per source. |
+| 1 | Objective, risk tier, owner | The objective is decision-oriented, the five-factor risk tier is right, and a named owner can sign off. |
+| 2 | Eval-set decomposition | Capability sets isolate one diagnostic capability each; T&S sets remain separate from capability. |
+| 3 | Step 4 bars | T&S has absolute hard gates; capability uses launch floors / regression-direction unless high-risk. |
+| 4 | Human inputs | Rubrics, ground truths, golden answers, and source dependencies have owners. |
+| 5 | Grader validation | Each set has a plausible grader type and validation plan before baseline. |
+| 6 | Regression partition | Capability and slim T&S regression sets have cadence; gate-only T&S sets run at milestones. |
+| 7 | Template integrity | No sheets, columns, headers, dropdowns, README text, or formatting were changed. |
 
-**Mandatory reminder:** *"This eval plan was AI-generated from your agent description / Vision. Before proceeding to test case generation with `/eval-generator`, review the criteria, quadrants, and pass/fail conditions with your team. The plan should reflect your business reality, not best-practice defaults."*
+## Behavior rules
 
----
-
-### Behavior rules
-
-- Every criterion must start with *"The agent should…"* (or *"…should NOT…"* for negative tests). Behaviors, not goals.
-- Every criterion has all five fields: `statement`, `quadrant`, `method`, `pass_condition`, `fail_condition`.
-- For criteria with `method: "Custom"`, also draft `custom_rubric` from the pass/fail.
-- 10–15 criteria total. Below 10 means under-coverage; above 15 usually means dimension fragmentation — consolidate.
-- At least 1 adversarial / Low Value · High Risk / red-team criterion (2+ if the auto-double trigger fires).
-- Don't prescribe percentage pass-thresholds per criterion. Pass/fail per case lives in the conditions.
-- If the description is vague, state assumptions explicitly in the Vision summary at the top of the report.
-
----
-
-## Example invocations
-
-```
-/eval-suite-planner I'm building an HR policy bot for a global company with 18 offices. It answers PTO, parental-leave, benefits questions from official HR documents. Should refuse salary-disclosure questions and escalate legal/discrimination concerns.
-
-/eval-suite-planner Customer support agent for refund requests. Polite, follows refund policy, doesn't make promises beyond policy. Risk profile: HIGH (handles financial decisions).
-
-/eval-suite-planner Email triage agent that reads incoming emails and labels them urgent / not-urgent / spam. Must NOT label real customer emails as spam.
-
-/eval-suite-planner I have a Vision doc — purpose: code review for Python PRs, users: dev team, knowledge: PEP 8 + internal style guide, boundaries: no security review, success: PRs land faster with fewer style nits.
-```
-
----
+- Do not generate scenario-plan tables as the Plan artifact.
+- Do not generate quality-signal sheets or quality-signal grouping as the Plan artifact.
+- Do not add columns to support missing concepts; use existing fields, especially `Notes`.
+- Do not create a `.docx` unless the user explicitly asks for a narrative report.
+- Do not produce long narrative chat output after artifact generation; use the HTML review page for the interactive summary and checkpoints.
+- Be specific to the described agent, but at eval-set granularity.
 
 ## Companion skills
 
-- **`/eval-generator`** — Stage 2: takes this plan and produces concrete test cases (single CSV per quality signal, 3 columns, one row per case × method).
-- **`/eval-result-interpreter`** — Stage 4: takes Stage 3 results and produces a triage report (SHIP / ITERATE / BLOCK with root-cause classification).
-- **`/eval-faq`** — methodology Q&A grounded in Microsoft's eval ecosystem.
-- **`/eval-guide`** — the orchestrator. Wraps Stages 0–4 with an interactive dashboard checkpoint at each stage.
+- **`/eval-generator`** — Generate test cases from the populated workbook registry.
+- **`/eval-result-interpreter`** — Interpret baseline / iteration results using Step 6-7 and gate status.
+- **`/eval-triage-and-improvement`** — Diagnose failures and feed the Step 9 optimization loop.
+- **`/eval-library-promoter`** — Promote Step 10 reusable assets.
+- **`/eval-guide`** — Orchestrated workflow with dashboard review checkpoints.

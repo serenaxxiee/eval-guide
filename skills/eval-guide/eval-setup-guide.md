@@ -12,7 +12,7 @@
 > **Purpose:** A step-by-step walkthrough for setting up and running the eval CSVs you just generated against your Copilot Studio agent.
 > **When to use:** First time you run the evals from this session, and any time someone new to your team is setting up an eval run.
 
-This is the operational companion to your eval set. Your CSVs and your eval plan tell you *what* to run; this guide tells you *how* to run them inside Copilot Studio without getting lost in the UI. Read once end-to-end before you start, then keep it open as a reference during your first run.
+This is the operational companion to your eval set. Your CSVs and your populated eval-suite workbook tell you *what* to run; this guide tells you *how* to run them inside Copilot Studio without getting lost in the UI. Read once end-to-end before you start, then keep it open as a reference during your first run.
 
 ## What you should have before you start
 
@@ -20,8 +20,8 @@ If any of these are missing, finish them first — running the eval before this 
 
 | You need | Where it came from | What it looks like |
 |---|---|---|
-| Your eval CSVs (one per quality signal) | Stage 2 of `/eval-guide` | `eval-knowledge-accuracy-<date>.csv`, `eval-safety-compliance-<date>.csv`, etc. |
-| Your eval plan `.docx` | Stage 1 of `/eval-guide` | `eval-plan-<agent>-<date>.docx` — keep it open; the quadrants and pass/fail conditions live here. |
+| Your eval CSVs (one per eval set) | Generate stage of `/eval-guide` | `eval-capability-accuracy-<date>.csv`, `eval-trust-safety-sensitive-data-<date>.csv`, etc. |
+| Your eval-suite workbook `.xlsx` | Plan stage of `/eval-guide` | `eval-suite-<agent>-<date>.xlsx` — keep it open; the registry has the set type, gate, target, cadence, owner, and notes. |
 | A Copilot Studio agent in your environment | Whoever built the agent | Reachable in the Copilot Studio Maker portal. |
 | Maker access to that agent | Your tenant admin | You can open the agent and see the **Test** / **Evaluate** tab without errors. |
 | One LLM-judge run budget | Your tenant / API plan | LLM-judge methods (`General quality`, `Compare meaning`, `Custom`) consume tokens — confirm budget before kicking off a 100-case run. |
@@ -35,7 +35,7 @@ If any of these are missing, finish them first — running the eval before this 
 
 ## Step 2 — Create a test set
 
-A test set is one bundle of test cases that share an evaluation mode. You will create **one test set per CSV** (i.e., one per quality signal).
+A test set is one bundle of test cases that share an evaluation mode. You will create **one test set per CSV** (i.e., one per workbook eval set).
 
 1. Click **New test set**.
 2. Name it after the CSV you're about to import — e.g., `Knowledge Accuracy — 2026-05-05`. Naming consistency makes re-run logs (Pillar 3) and baseline comparisons (Pillar 5) much easier later.
@@ -48,7 +48,7 @@ A test set is one bundle of test cases that share an evaluation mode. You will c
 ## Step 3 — Import the CSV
 
 1. Inside the new test set, click **Add test cases** → **Import from CSV**.
-2. Pick the CSV for the signal you're setting up (e.g., `eval-knowledge-accuracy-<date>.csv`). **It has exactly two columns: `Question` and `Expected response`.** That's by design — the testing method is **not** in the CSV. You will set it manually per row in the next step.
+2. Pick the CSV for the eval set you're setting up (e.g., `eval-capability-accuracy-<date>.csv`). **It has exactly two columns: `Question` and `Expected response`.** That's by design — the testing method is **not** in the CSV. You will set it manually per row in the next step.
 3. Confirm the column mapping:
    - `Question` → user prompt the agent will receive.
    - `Expected response` → the reference value the test case compares against. The eval-guide skill pre-fills this with the most useful starting value per row (canonical answer, keyword list, or blank, depending on the criterion).
@@ -105,10 +105,9 @@ Read the block for whichever method you assigned in the CPS dropdown. Each block
   - Provide a **rubric / pass condition** in the test set's method configuration. Paste the criterion's *Pass condition* from your eval plan verbatim — e.g., *"Response is empathetic and acknowledges the user's frustration before giving an answer."*
   - If the UI exposes a **judge model** dropdown, leave it on the default unless your tenant requires a specific one.
 - **Threshold (how to set it):** the judge returns a 1–5 score per case.
-  - Default Pass threshold: **score ≥ 4**.
-  - Stricter (High Value · High Risk / Low Value · High Risk quadrants): **score ≥ 4.5** (effectively requires a 5).
-  - Looser (Low Value · Low Risk quadrant): **score ≥ 3** is acceptable.
-  - Decide once per quality signal and apply uniformly — don't set per-row thresholds; they're impossible to maintain.
+  - Default capability-set pass threshold: **score >= 4**.
+  - Trust & Safety hard-gate sets usually require the strictest rubric and near-perfect pass behavior; record the exact gate in the workbook registry.
+  - Decide once per eval set and apply uniformly — don't set per-row thresholds; they're impossible to maintain.
 - **Pitfalls:**
   - Vague rubrics produce inconsistent scores. "Helpful and clear" is a bad pass condition; "Names the specific policy and links to it" is a good one.
   - Non-deterministic — re-run the set; if a borderline case flips between Pass and Fail, take the median of three runs or sharpen the rubric.
@@ -119,7 +118,7 @@ Read the block for whichever method you assigned in the CPS dropdown. Each block
 - **Setup in the UI:**
   - **Expected response** must be filled in with the canonical correct answer. No `[VERIFY: …]` placeholders left over.
   - The judge compares meaning, not wording — paraphrase is OK; contradiction or omission is not.
-- **Threshold:** typically returned as a binary Pass/Fail by the judge, not a numeric score. If your tenant exposes a numeric similarity score instead, default Pass at **≥ 0.75**, tighten to **≥ 0.85** for High Value · High Risk / Low Value · High Risk.
+- **Threshold:** typically returned as a binary Pass/Fail by the judge, not a numeric score. If your tenant exposes a numeric similarity score instead, default Pass at **>= 0.75** for capability sets and tighten for hard-gated or high-risk sets according to the workbook registry.
 - **Pitfalls:**
   - If the expected response embeds dates, prices, IDs, or anything time-sensitive, the judge will mark stale-but-close answers as Fail. Use `Keyword match` for the time-sensitive piece and split it into two criteria.
   - Same ±5% variance as `General quality`. Median of three runs for borderline cases.
@@ -188,13 +187,13 @@ Read the block for whichever method you assigned in the CPS dropdown. Each block
 
 For LLM-judge and similarity methods, the threshold is the only knob you control after import. Three rules:
 
-1. **Tie thresholds to quadrants, not to individual cases.** High Value · High Risk and Low Value · High Risk get the strictest threshold; High Value · Low Risk gets the default; Low Value · Low Risk gets the loosest. This is what makes the Value × Risk matrix actually do work for you.
+1. **Tie thresholds to eval sets, not to individual cases.** Trust & Safety sets usually get absolute hard gates; capability sets usually get launch floors plus regression/direction tracking. This is what makes Step 4 governance actionable.
 2. **Calibrate on 10 cases before locking.** Run a small subset, sample 10 verdicts at your candidate threshold, and ask: "If I were grading this myself, would I have come to the same Pass/Fail?" If agreement is below 80%, the threshold is wrong (or the rubric is).
-3. **Document the threshold next to the eval plan.** Write the threshold per quality signal into your `eval-plan-<agent>-<date>.docx` so future runs use the same bar. Drifting thresholds are the silent killer of run-to-run comparability.
+3. **Document the threshold in the workbook registry.** Write the threshold/gate per eval set into your `eval-suite-<agent>-<date>.xlsx` so future runs use the same bar. Drifting thresholds are the silent killer of run-to-run comparability.
 
 ### A note on the test-case `.docx` report from `/eval-guide`
 
-The Stage 2 `.docx` test-case report (separate from this setup guide) groups every criterion and lists which method the eval-guide skill *suggested* for each. Use it as a cross-reference while you're setting methods in the CPS UI — it's the authoritative source for "this criterion was designed to be tested by Compare meaning, that one by Keyword match." If a row's pre-filled Expected response cell contradicts the method you ultimately want to use, edit the cell — see the table at the top of Step 4 for the right cell content per method.
+The Stage 2 `.docx` test-case report (separate from this setup guide) groups cases by eval set and lists which method the eval-guide skill *suggested* for each set. Use it as a cross-reference while you're setting methods in the CPS UI. If a row's pre-filled Expected response cell contradicts the method you ultimately want to use, edit the cell — see the table at the top of Step 4 for the right cell content per method.
 
 ## Step 5 — Connect to the agent endpoint
 
@@ -208,7 +207,7 @@ The Evaluate tab uses the agent you have open by default. You don't normally con
 1. Click **Run evaluation**.
 2. Watch the run banner — for 100 single-response cases against an LLM-judge method, expect 5–15 minutes depending on agent latency. Conversation evals take longer because each case is a multi-turn exchange.
 3. **Don't close the tab during the run.** Closing usually does not cancel the run, but it does break your live progress view.
-4. **Run order rule (from `rerun-protocol`):** start with **High Value · High Risk** and **Low Value · High Risk** quadrant test sets first. If those fail, fix and re-run before bothering with the Low-Risk quadrants — the rest is noise until the high-stakes cases pass.
+4. **Run order rule (from `rerun-protocol`):** start with hard-gated Trust & Safety sets and directly impacted capability regression sets. If a hard gate fails, fix or obtain an explicit accountable-owner waiver before interpreting lower-priority results.
 
 ## Step 7 — Read the results
 
@@ -221,7 +220,7 @@ When the run completes, the Evaluate tab shows:
 Two things to do *before* you trust the headline number:
 
 1. **Skim the judge's explanations** for 5–10 random cases. If the judge consistently mis-grades (e.g., calling a correct answer wrong because the wording doesn't match yours), that's an *eval setup* problem, not an *agent* problem — see the 20% rule in `/eval-result-interpreter`.
-2. **Apply the quadrant lens** before reacting to the pass rate. A 70% overall pass rate where every Low Value · High Risk case failed is a *worse* outcome than 60% overall where all Low Value · High Risk cases passed and the failures are in Low Value · Low Risk.
+2. **Apply the gate lens** before reacting to the pass rate. A 70% overall pass rate with a failed hard Trust & Safety gate is a *worse* outcome than 60% overall with all hard gates passing and capability misses isolated to soft targets.
 
 When you're ready for triage, hand the results to `/eval-result-interpreter` (Stage 4 of `/eval-guide`).
 
@@ -248,17 +247,17 @@ If you skip the export, you will lose run history and the ability to compare run
 
 ## You've finished setup successfully when…
 
-- All your `eval-<signal>-<date>.csv` files are imported as named test sets in the agent.
-- Each test set's evaluation mode and per-row method match your eval plan.
+- All your `eval-<set-type>-<set-slug>-<date>.csv` files are imported as named test sets in the agent.
+- Each test set's evaluation mode and per-row method match your workbook registry.
 - A first run has completed end-to-end (even on a small subset).
-- Results are exported as `eval-results-<agent>-<YYYY-MM-DD>.csv` and stored next to your eval plan.
+- Results are exported as `eval-results-<agent>-<YYYY-MM-DD>.csv` and stored next to your eval-suite workbook.
 
 At that point you have a repeatable eval setup. The rerun protocol tells you when to come back and run it again; the baseline-comparison workbook tells you how to compare two runs.
 
 ## Related artifacts (from this session)
 
-- `eval-plan-<agent>-<date>.docx` — Stage 1 plan; defines the criteria each test case is judging.
-- `eval-<signal>-<date>.csv` — the files you import in Step 3 (two columns: Question, Expected response). The testing method is set per row in the CPS UI in Step 4.
+- `eval-suite-<agent>-<date>.xlsx` — Plan workbook; defines eval sets, gates, targets, cadence, owners, and notes.
+- `eval-<set-type>-<set-slug>-<date>.csv` — the files you import in Step 3 (two columns: Question, Expected response). The testing method is set per row in the CPS UI in Step 4.
 - `rerun-protocol-<agent>-<date>.docx` — when to re-run; pairs with this guide.
 - `baseline-comparison-<agent>-<date>.xlsx` — how to compare two runs once you have multiple exports.
 

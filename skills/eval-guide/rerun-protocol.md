@@ -19,7 +19,7 @@ This is the Pillar 3 starter artifact from `/eval-guide`. It moves the agent fro
 
 You need:
 
-- An eval set built (Stage 2 deliverable: the `eval-<signal>-<date>.csv` files).
+- An eval set built (Stage 2 deliverable: the `eval-<set-type>-<set-slug>-<date>.csv` files).
 - A way to run it — Copilot Studio's Evaluation tab, the eval-runner script, or another runner.
 - A place to archive results — local `.csv` exports work fine for L200; Copilot Studio retains run results for only 89 days, so always export.
 
@@ -30,17 +30,17 @@ Use the trigger as the prompt; the scope column tells you what subset to run, no
 | What changed | What to re-run | Priority order |
 |---|---|---|
 | Single test case (eval bug fix) | Only the affected test case | Run the one case |
-| Agent config change (instructions, settings) | Affected test cases + spot-check one unrelated set | High Value · High Risk + Low Value · High Risk first, then targeted |
-| System prompt change | Full eval suite | High Value · High Risk + Low Value · High Risk first, then full |
-| Knowledge source update | All knowledge-grounding and factual-accuracy cases | High Value · High Risk + Low Value · High Risk first, then knowledge cases |
-| Tool / connector change | All cases that exercise the tool, plus capability-routing cases | High Value · High Risk + Low Value · High Risk first, then tool cases |
-| Model upgrade | Full eval suite | High Value · High Risk + Low Value · High Risk first, then full |
-| New feature added | New cases for the feature + full High Value · High Risk + Low Value · High Risk to catch regressions | New + High Value · High Risk + Low Value · High Risk minimum |
+| Agent config change (instructions, settings) | Affected eval sets + spot-check one unrelated set | Trust & Safety gates first, then affected capability regression sets |
+| System prompt change | Full eval suite | Trust & Safety gates first, then full |
+| Knowledge source update | All knowledge-grounding and factual-accuracy sets | Grounding/accuracy capability sets plus any source-dependent gates |
+| Tool / connector change | All sets that exercise the tool, plus routing/action sets | Tool/action capability sets plus relevant safety gates |
+| Model upgrade | Full eval suite | Trust & Safety gates first, then full |
+| New feature added | New eval sets for the feature + impacted regression/gate sets | New feature sets plus impacted Trust & Safety gates |
 | Scheduled cadence (no change) | Full suite at a defined interval (weekly + pre-release minimum) | Full suite |
 
 ## Run order rule
 
-Run **High Value · High Risk** and **Low Value · High Risk** quadrant cases first, regardless of trigger. Two reasons: (1) if High Value · High Risk or Low Value · High Risk fail, the rest is noise — fix those before interpreting High Value · Low Risk or Low Value · Low Risk results; (2) Low Value · High Risk cases are short and run fast, so you get a fast signal on whether the change broke anything safety-related.
+Run **hard-gated Trust & Safety sets** and the **directly impacted capability regression sets** first, regardless of trigger. Two reasons: (1) if a hard gate fails, the release decision is blocked until the gate is fixed or explicitly waived by the accountable owner; (2) impacted regression sets give the fastest signal on whether the change broke the behavior it touched.
 
 Never re-run only the failing cases from a previous run. Always include the previously-passing set so regressions surface. A "fix" that breaks two unrelated cases is worse than the original failure.
 
@@ -51,7 +51,7 @@ For every re-run, capture in your archive:
 - **Run date** (timestamp).
 - **Agent version or change description** — what's different from last run? "Updated PTO knowledge source", "switched to gpt-4o", "added empathy instruction".
 - **Eval set version** — which CSV files were used, with their date stamps.
-- **Pass rate per quadrant** — High Value · High Risk, High Value · Low Risk, Low Value · High Risk, Low Value · Low Risk.
+- **Pass rate and gate status per eval set** — including capability vs Trust & Safety, target, actual, gate type, and intended use.
 - **Pass/fail status per case** — exported from Copilot Studio's Evaluation tab as CSV.
 
 A spreadsheet, a markdown file in the repo, or `eval-results-<YYYY-MM-DD>.csv` per run is enough at L200. The discipline is logging, not tooling.
@@ -65,7 +65,7 @@ For root-cause analysis on failures, use `/eval-result-interpreter` and `/eval-t
 ## You've reached L200 Defined when…
 
 - A trigger from the table above has fired and you ran the prescribed scope (not skipped, not improvised).
-- The run is logged with date, version, eval set version, and per-quadrant pass rates.
+- The run is logged with date, version, eval set version, and per-set pass rates/gate status.
 - Results are exported to CSV before the 89-day Copilot Studio retention window.
 - A documented re-run happens at least once per release cycle, not only when "something feels off".
 

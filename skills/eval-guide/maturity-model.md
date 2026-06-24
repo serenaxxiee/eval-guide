@@ -1,6 +1,10 @@
-# Per-Agent Eval Maturity Model — Canonical Reference
+# Per-Agent Eval Maturity Model — Outcome Scorecard
 
-This is the source of truth for the maturity model used across the eval-guide skill. The `orient` dashboard, the per-stage maturity callouts in `SKILL.md`, the maturity snapshot tables in generated reports, and `USAGE.md` all reference this file. When level definitions or pillar wording change, update this file first, then propagate to consumers.
+This is the source of truth for the maturity model — the toolkit's **outcome scorecard** (where an agent stands, how far a session moves it). It is one of three layers; the **canonical methodology is the 10-step playbook in `playbook.md`** (the process spine). This file does not redefine the methodology — it scores progress against it. See `playbook.md` → *The three layers* and *Canonical crosswalk*.
+
+The `orient` dashboard, the per-stage maturity callouts in `SKILL.md`, the maturity snapshot tables in generated reports, and `USAGE.md` all reference this file. When level definitions or pillar wording change, update this file first, then propagate to consumers.
+
+**Each pillar maps to playbook steps:** P1 = Step 1 (+4) · P2 = Steps 2,3,4,5 · P3 = Steps 6,8 · P4 = Steps 7,9 · P5 = Step 8. Step 10 (reusable assets) is the bridge from per-agent maturity to org-wide maturity.
 
 ## Levels
 
@@ -18,13 +22,13 @@ Five levels per pillar, from `L100` (initial state, no practice) to `L500` (cont
 
 Five pillars covering definition, content, execution, learning, and change management.
 
-| # | Pillar | What it measures |
-|---|---|---|
-| 1 | Define what "good" means | Acceptance criteria quality |
-| 2 | Build your eval sets | Coverage, versioning, breadth |
-| 3 | Run evals across the lifecycle | Where and when evals execute (offline, pre-deploy, in production) |
-| 4 | Improve and iterate | How improvements are validated |
-| 5 | Handle changes with confidence | How changes (prompts, tools, models, architecture) get tested before shipping |
+| # | Pillar | What it measures | Playbook steps |
+|---|---|---|---|
+| 1 | Define what "good" means | Acceptance criteria quality | Step 1 (+4) |
+| 2 | Build your eval sets | Coverage, versioning, breadth (capability + trust & safety) | Steps 2, 3, 4, 5 |
+| 3 | Run evals across the lifecycle | Where and when evals execute (offline, pre-deploy, in production) | Steps 6, 8 |
+| 4 | Improve and iterate | How improvements are validated | Steps 7, 9 |
+| 5 | Handle changes with confidence | How changes (prompts, tools, models, architecture) get tested before shipping | Step 8 |
 
 ## Full 5×5
 
@@ -82,13 +86,13 @@ Five pillars covering definition, content, execution, learning, and change manag
 
 A `/eval-guide` session targets the following levels per pillar. The session delivers in-session content for Pillars 1, 2, 4 and starter reference docs for Pillars 3 and 5.
 
-| Pillar | Baseline | After session | Mechanism | Next-session target |
+| Pillar | Baseline | After session | Mechanism (stage → playbook step) | Next-session target |
 |---|---|---|---|---|
-| 1 — Define what "good" means | L100 Initial | L300 Systematic ✓ | Stage 0 (Discover) + Stage 1 (Plan) | — |
-| 2 — Build your eval sets | L100 Initial | L300 Systematic ✓ | Stage 2 (Generate) | — |
-| 3 — Run evals across the lifecycle | L100 Initial | L200 Defined ✓ | `rerun-protocol-<agent>-<date>.docx` (starter artifact, generated from `rerun-protocol.md` source) | L300 Systematic |
-| 4 — Improve and iterate | L100 Initial | L300 Systematic ✓ | Stage 4 (Interpret) — only if eval results are available | — |
-| 5 — Handle changes with confidence | L100 Initial | L200 Defined ✓ | `baseline-comparison-<agent>-<date>.xlsx` (starter artifact, generated from `baseline-comparison-template.md` source) | L300 Systematic |
+| 1 — Define what "good" means | L100 Initial | L300 Systematic ✓ | Discover + Plan → Steps 1, 4 | — |
+| 2 — Build your eval sets | L100 Initial | L300 Systematic ✓ | Generate → Steps 2, 3, 5 (capability + trust & safety + human inputs) | — |
+| 3 — Run evals across the lifecycle | L100 Initial | L200 Defined ✓ | `rerun-protocol-<agent>-<date>.docx` → Step 8 (regression partition) | L300 Systematic |
+| 4 — Improve and iterate | L100 Initial | L300 Systematic ✓ | Interpret → Steps 7, 9 — only if eval results are available | — |
+| 5 — Handle changes with confidence | L100 Initial | L200 Defined ✓ | `baseline-comparison-<agent>-<date>.xlsx` → Step 8 (change validation) | L300 Systematic |
 
 Pillars 3 and 5 are not delivered in-session because they require ongoing operating practices — cadence, CI hooks, version-tagged baselines. The session leaves the customer with starter artifacts that get them to L200 Defined: a documented protocol they can execute when triggered. L300 Systematic for those pillars is the next chapter and requires production signal to compare against.
 
@@ -103,6 +107,7 @@ The maturity model is referenced in three different layers; do not conflate them
 ## Sync rule
 
 When this file changes, propagate to:
+- `skills/eval-guide/playbook.md` (the methodology spine — keep the pillar→step rollup in sync)
 - `skills/eval-guide/SKILL.md` (Eval Maturity Journey section, per-stage maturity callouts, two snapshot tables)
 - `skills/eval-guide/USAGE.md` (Section 3 maturity table, Pillar 3/5 re-engagement section)
 - `skills/eval-guide/dashboard/examples/stage-orient-data.json` (pillar definitions)
