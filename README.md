@@ -1,23 +1,54 @@
 # eval-guide
 
-AI agent evaluation toolkit for [Copilot Studio](https://copilotstudio.microsoft.com). Plan evals, generate test cases, interpret results, and triage failures — from Claude Code or GitHub Copilot.
+AI agent evaluation toolkit for [Copilot Studio](https://copilotstudio.microsoft.com). Plan evals, generate test cases, interpret results, and triage failures — from GitHub Copilot (CLI, app, and cowork) or Claude Code.
 
 Grounded in Microsoft's [Eval Scenario Library](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-checklist), [Triage & Improvement Playbook](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/evaluation-iterative-framework), [Common Evaluation Approaches](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/common-evaluation-approaches), and MS Learn agent evaluation documentation.
 
 ## Install
 
+### GitHub Copilot (CLI, app, and cowork)
+
+Register the marketplace once, then install the plugin:
+
+```bash
+copilot plugin marketplace add serenaxxiee/eval-guide
+copilot plugin install eval-guide@eval-guide
+```
+
+Restart your session (or run `/restart`) and all six skills are available as `/eval-guide`, `/eval-suite-planner`, `/eval-generator`, `/eval-result-interpreter`, `/eval-triage-and-improvement`, and `/eval-faq`.
+
+Verify the install:
+
+```bash
+copilot plugin list          # expect: eval-guide@eval-guide (enabled)
+copilot skill list           # expect: 6 eval-* skills, no load warnings
+```
+
+> **Use the marketplace commands above.** Installing straight from a repo, URL, or local path
+> (`copilot plugin install serenaxxiee/eval-guide`) still works today but is deprecated —
+> Copilot will only support `plugin@marketplace` installs in a future release.
+
+To update later:
+
+```bash
+copilot plugin update eval-guide@eval-guide
+```
+
 ### Claude Code
 
 ```bash
-claude plugin marketplace add microsoft/eval-guide
+claude plugin marketplace add serenaxxiee/eval-guide
 claude plugin install eval-guide@eval-guide
 ```
 
-### GitHub Copilot
+### Requirements
 
-```bash
-npx skills add microsoft/eval-guide
-```
+| Needed for | Requirement |
+|---|---|
+| All stages | Python 3 (ships the review dashboards) |
+| Stage 3 (Run) only | Node.js, plus `ANTHROPIC_API_KEY` and a Copilot Studio DirectLine endpoint |
+
+Stages 0–2 (Discover, Plan, Generate) need no running agent and no API key.
 
 ## Skills
 

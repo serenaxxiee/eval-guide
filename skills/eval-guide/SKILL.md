@@ -6,29 +6,57 @@ preamble: |
   echo "$_UPD"
 ---
 
+<!-- RESOLVING SKILL-BUNDLED FILES (read this before running any command)
+
+This skill ships runnable assets next to SKILL.md:
+  <skill-dir>/dashboard/serve.py
+  <skill-dir>/dashboard/orient-dashboard.html
+  <skill-dir>/scripts/eval-runner.js
+
+`<skill-dir>` is THIS skill's base directory. The runtime tells you the absolute path
+when it loads the skill — use that value verbatim. Do not hardcode an install location
+and do not glob for one; the path differs per client and per install mode:
+
+  GitHub Copilot (CLI / app / cowork)  ~/.copilot/installed-plugins/.../skills/eval-guide
+  Claude Code                          ~/.claude/plugins/cache/.../skills/eval-guide
+  Dev checkout                         <repo>/skills/eval-guide
+
+Quote the path — every client install path can contain spaces.
+-->
+
 <!-- VERSION CHECK INSTRUCTIONS
-When the preamble outputs text, handle it as follows:
+The `preamble:` field above is Claude Code-specific. GitHub Copilot ignores it and
+updates plugins natively, so on Copilot there is no preamble output and nothing to handle.
+
+When the preamble DOES output text (Claude Code), handle it as follows:
 
 If the output contains "UPGRADE_AVAILABLE <old> <new>":
-  Use AskUserQuestion to ask the user:
+  Ask the user (AskUserQuestion on Claude Code, ask_user on GitHub Copilot):
   "eval-guide v<new> is available (you're on v<old>). Upgrade now?"
   With these options:
-  1. "Yes, upgrade now" — Run: claude plugin install eval-guide@eval-guide (the marketplace source `microsoft/eval-guide` must already be added via `claude plugin marketplace add microsoft/eval-guide`)
+  1. "Yes, upgrade now" — upgrade with the host client's own plugin command:
+       Claude Code:     claude plugin install eval-guide@eval-guide
+                        (marketplace must already be added via
+                         `claude plugin marketplace add serenaxxiee/eval-guide`)
+       GitHub Copilot:  copilot plugin update eval-guide
   2. "Always keep me up to date" — Run: eval-guide-update-config set auto_upgrade true
-     Then run: claude plugin install eval-guide@eval-guide
+     Then run the host client's upgrade command from option 1.
   3. "Not now" — Run: eval-guide-update-snooze <new>
      Then continue with the skill normally.
   4. "Never ask again" — Run: eval-guide-update-config set update_check false
      Then continue with the skill normally.
 
-  The config and snooze scripts are in the same bin/ directory as the update check script.
+  The config and snooze scripts are in the plugin's bin/ directory, alongside the update
+  check script. Never run a `claude ...` command on Copilot or a `copilot ...` command on
+  Claude Code — match the command to the client you are actually running in.
   After upgrade completes, tell the user to restart the session for the new version to take effect.
 
 If the output contains "JUST_UPGRADED <old> <new>":
   Tell the user: "Running eval-guide v<new> (just updated from v<old>)!" and continue normally.
 
-If the output is empty:
-  Continue normally — the user is up to date (or check was snoozed/disabled).
+If the output is empty or absent:
+  Continue normally — the user is up to date (or the check was snoozed, disabled, or the
+  client does not support preambles).
 -->
 
 # Eval Guide — Enablement Accelerator
@@ -63,8 +91,8 @@ Plan produces a populated Eval Suite Template workbook plus a companion interact
 **Flow at each dashboard review stage (Generate, Interpret):**
 1. Complete the stage's analysis.
 2. Write stage data to a JSON file (e.g., `stage-1-data.json`).
-3. Launch with `--serve` mode. The AI's bash blocks until the customer clicks Approve or Regenerate:
-   `python "$(ls ~/.claude/skills/eval-guide/dashboard/serve.py 2>/dev/null || ls ~/.claude/plugins/cache/*/eval-guide/*/skills/eval-guide/dashboard/serve.py 2>/dev/null | head -1)" --stage <name> --serve --data <file>.json`
+3. Launch with `--serve` mode. The AI's shell blocks until the customer clicks Approve or Regenerate. Resolve `<skill-dir>` from the skill context (see "Resolving skill-bundled files" at the top of this file):
+   `python "<skill-dir>/dashboard/serve.py" --stage <name> --serve --data <file>.json`
 4. The customer reviews in the browser at `http://localhost:3118`: edits fields inline, updates eval-set/case/root-cause details, and adds comments. Edits auto-save to the localhost server.
 5. When the customer clicks **Approve & Continue** or **Incorporate Changes & Regenerate**, the browser POSTs the feedback to `/api/feedback`. The server captures it, prints the feedback JSON to stdout between marker lines, and shuts down. **No file is downloaded; the customer never moves anything.**
 6. **Parse the feedback from the bash command's stdout** — look for the block:
@@ -105,18 +133,11 @@ Once the customer has described their agent in one or two sentences, give them a
 
 The orient dashboard is **pre-built and shipped with the skill** — `dashboard/orient-dashboard.html`. It is identical for every agent (the maturity model and "what you walk away with" are agent-agnostic), so there is no per-session JSON write and no Python launch. Don't ask for the agent name yet — Stage 0 captures it where it's actually needed for deliverable filenames.
 
-1. Open the static dashboard in the customer's default browser. Use the OS launcher and the install-resolved path:
+1. Open the static dashboard in the customer's default browser. Resolve `<skill-dir>` from the skill context, then use this one-liner — it is cross-platform (Windows, macOS, Linux) and needs no `uname`, `ls`, `open`, or `xdg-open`:
    ```bash
-   ORIENT_HTML="$(ls ~/.claude/skills/eval-guide/dashboard/orient-dashboard.html 2>/dev/null || ls ~/.claude/plugins/cache/*/eval-guide/*/skills/eval-guide/dashboard/orient-dashboard.html 2>/dev/null | head -1)"
-   case "$(uname -s 2>/dev/null)" in
-     Darwin) open "$ORIENT_HTML" ;;
-     Linux)  xdg-open "$ORIENT_HTML" ;;
-     *)      cmd.exe /C start "" "$ORIENT_HTML" ;;  # Windows / Git Bash
-   esac
+   python -c "import sys,pathlib,webbrowser; webbrowser.open(pathlib.Path(sys.argv[1]).resolve().as_uri())" "<skill-dir>/dashboard/orient-dashboard.html"
    ```
-   The `ls ... | head -1` fallback resolves the file regardless of install location — user-global skills first (`~/.claude/skills/eval-guide/`), plugin-cache second.
-
-   **For dev installs** (skill checked out at an arbitrary path, not in `~/.claude/`), the AI should know the absolute path of the SKILL.md it's reading and substitute `<SKILL.md-dir>/dashboard/orient-dashboard.html`.
+   `pathlib.as_uri()` converts the path to a correct `file://` URL on every OS, including Windows drive letters and paths containing spaces. Python is already required for the Generate and Interpret dashboards, so this adds no new dependency.
 
    This is a **read-only stage**. There is no feedback file, no confirmation gate, and no `serve.py` involvement. The customer reviews the snapshot in the browser while the conversation continues in chat.
 
@@ -563,9 +584,9 @@ Before generating final CSV and report files, launch the test cases dashboard fo
    - Wrap AI-generated factual content in `[VERIFY: ...]` markers inside the `Compare meaning` / `Text similarity` entries so the dashboard highlights them for review.
    - **`Custom` method in the eval set**: also write a `custom_rubric` field on each set or case — a short LLM-judge rubric drafted from the eval-set purpose and expected behavior ("Rate the response Pass / Fail. Pass = …. Fail = …. Output PASS or FAIL with a one-sentence reason."). The dashboard shows this as an editable textarea. Don't leave Custom sets without a rubric.
    - **`Keyword match` method**: the per-case `expected_responses["Keyword match"]` value is a **comma-separated keyword list** (not a reference answer). The dashboard renders this as a "Keywords" column.
-2. Launch the dashboard:
+2. Launch the dashboard (resolve `<skill-dir>` from the skill context):
    ```bash
-   python "$(ls ~/.claude/skills/eval-guide/dashboard/serve.py 2>/dev/null || ls ~/.claude/plugins/cache/*/eval-guide/*/skills/eval-guide/dashboard/serve.py 2>/dev/null | head -1)" --stage generate --serve --data stage-2-data.json
+   python "<skill-dir>/dashboard/serve.py" --stage generate --serve --data stage-2-data.json
    ```
 3. The user reviews the **Eval Sets Overview** at the top, then walks the stacked eval-set sections. Per eval set: edits the **Test Methods to Use** chips (set-level), checks gate/target/cadence metadata, edits Custom rubric callouts if Custom is used, edits per-method columns in the cases table, checks VERIFY-highlighted factual content, and adds/removes test cases.
 4. When the user confirms, **parse the feedback from the bash stdout** between the `===EVAL_GUIDE_FEEDBACK_BEGIN===` / `===EVAL_GUIDE_FEEDBACK_END===` markers. **Apply every edit it contains, faithfully and without question.** The customer's choices are final — do NOT re-litigate, do NOT suggest reverting, do NOT ask for confirmation again, do NOT partially apply. (`generate-feedback.json` is also on disk as a backup, but stdout is the primary channel.)
@@ -862,9 +883,9 @@ Before generating the final triage report, launch the interpret dashboard for re
    - `eval_results` contains ALL test case results (not just failures) so cases can be expanded in the dashboard and human Agree / Disagree overrides can recompute gate status.
    - Each eval result includes `explanation` (the LLM judge rationale) for human review
    - Do **not** precompute a static `verdict` as the source of truth. The dashboard live-computes the verdict from `eval_sets` + `criterion_metrics` + human overrides, then returns `computed_verdict` and `gate_summary` in feedback for the final report.
-2. Launch the dashboard:
+2. Launch the dashboard (resolve `<skill-dir>` from the skill context):
    ```bash
-   python "$(ls ~/.claude/skills/eval-guide/dashboard/serve.py 2>/dev/null || ls ~/.claude/plugins/cache/*/eval-guide/*/skills/eval-guide/dashboard/serve.py 2>/dev/null | head -1)" --stage interpret --serve --data stage-4-data.json
+   python "<skill-dir>/dashboard/serve.py" --stage interpret --serve --data stage-4-data.json
    ```
 3. The user reviews the gate verdict first, then eval-set pass rates and regression/direction evidence, expands set rows to see test case details, uses Human Judgement (Agree/Disagree) to override LLM judge assessments, and re-classifies root causes. Disagreed failed cases are treated as eval-setup issues and no longer count against the agent's gate status; the dashboard recomputes set pass rates and the verdict live.
 4. When the user confirms, **parse the feedback from the bash stdout** between the `===EVAL_GUIDE_FEEDBACK_BEGIN===` / `===EVAL_GUIDE_FEEDBACK_END===` markers. **Apply every edit it contains, faithfully and without question.** The customer's choices are final — do NOT re-litigate, do NOT suggest reverting, do NOT ask for confirmation again, do NOT partially apply. (`interpret-feedback.json` is also on disk as a backup, but stdout is the primary channel.)

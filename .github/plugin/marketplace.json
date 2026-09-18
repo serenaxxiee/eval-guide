@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "eval-guide",
-      "description": "AI agent evaluation toolkit for Copilot Studio. Plan evals, generate test cases, interpret results, and triage failures.",
+      "description": "AI agent evaluation toolkit for Copilot Studio. Plan evals, generate test cases, run them, interpret results, and triage failures — grounded in Microsoft's Practical Guidance on Agent Evaluation (10-step playbook).",
       "version": "1.1.0",
       "author": {
         "name": "Serena Xie",
@@ -20,6 +20,15 @@
       "homepage": "https://github.com/serenaxxiee/eval-guide#readme",
       "repository": "https://github.com/serenaxxiee/eval-guide",
       "license": "MIT",
+      "keywords": [
+        "evaluation",
+        "eval",
+        "copilot-studio",
+        "agent-quality",
+        "test-generation",
+        "triage",
+        "ai-agents"
+      ],
       "source": "./"
     }
   ]

@@ -4,10 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-This is a **content/plugin repository**, not an application. It ships an AI-agent evaluation toolkit for Copilot Studio in two parallel forms:
+This is a **content/plugin repository**, not an application. It ships an AI-agent evaluation toolkit for Copilot Studio in three parallel forms:
 
-- **Claude Code plugin** — skills under `skills/*/SKILL.md`, registered via `.claude-plugin/plugin.json` and `marketplace.json`.
+- **GitHub Copilot plugin** (CLI, app, cowork) — skills under `skills/*/SKILL.md`, registered via the [Agent Plugins 1.0](https://github.com/agentplugins/agent-plugins-spec) manifest at `plugin.json` (repo root) and indexed by `.github/plugin/marketplace.json`.
+- **Claude Code plugin** — the same skills, registered via `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
 - **GitHub Copilot prompts** — equivalent prompts under `.github/prompts/*.prompt.md`, with always-on instructions in `.github/copilot-instructions.md`.
+
+The two plugin manifests coexist deliberately: Copilot reads the root `plugin.json` (and also accepts `.claude-plugin/`), Claude Code reads only `.claude-plugin/`. Both point at the same `skills/` directory, so there is one copy of every skill.
 
 There is no build, no test runner, no lint step. Changes are validated by running the skills end-to-end against an agent description.
 
@@ -55,9 +58,28 @@ This is the only stage that requires a running agent.
 
 ### Versioning and self-upgrade
 
-Every `/eval-guide` invocation runs `bin/eval-guide-update-check` from the SKILL.md `preamble:` block. The script compares `VERSION` against `microsoft/eval-guide@main` on GitHub and prints `UPGRADE_AVAILABLE <old> <new>` / `JUST_UPGRADED <old> <new>` / nothing. The skill body has explicit handling instructions for each output. State (config, snooze, just-upgraded marker) lives in `~/.eval-guide/`.
+Every `/eval-guide` invocation runs `bin/eval-guide-update-check` from the SKILL.md `preamble:` block. The script compares `VERSION` against `serenaxxiee/eval-guide@main` on GitHub and prints `UPGRADE_AVAILABLE <old> <new>` / `JUST_UPGRADED <old> <new>` / nothing. The skill body has explicit handling instructions for each output. State (config, snooze, just-upgraded marker) lives in `~/.eval-guide/`.
 
-When bumping a release: edit `VERSION`, update `.claude-plugin/plugin.json` and `marketplace.json` versions, and merge to `main` so the remote check picks up the new version.
+`preamble:` is a Claude Code feature. GitHub Copilot ignores it and updates plugins natively via `copilot plugin update eval-guide@eval-guide`, so on Copilot there is no preamble output to handle. The version-check block in `skills/eval-guide/SKILL.md` is client-aware — never emit a `claude ...` command on Copilot or a `copilot ...` command on Claude Code.
+
+When bumping a release, update the version in **all five** places so the clients agree:
+
+| File | Field |
+|---|---|
+| `VERSION` | whole file |
+| `plugin.json` | `version` |
+| `.claude-plugin/plugin.json` | `version` |
+| `.github/plugin/marketplace.json` | `plugins[0].version` and `metadata.version` |
+| `.claude-plugin/marketplace.json` | `plugins[0].version` and `metadata.version` |
+
+Then merge to `main` so the remote update check picks up the new version.
+
+## Cross-client portability rules
+
+The skills run on Copilot (Windows/macOS/Linux) and Claude Code. Two rules keep them working everywhere:
+
+1. **Never hardcode or glob an install path.** Resolve skill-bundled assets (`dashboard/serve.py`, `dashboard/orient-dashboard.html`, `scripts/eval-runner.js`) from the skill's base directory, which the runtime supplies when the skill loads. Copilot installs to `~/.copilot/installed-plugins/...`, Claude Code to `~/.claude/plugins/cache/...`, and a dev checkout lives anywhere. A `ls ~/.claude/... | head -1` style fallback silently resolves to *another client's copy* when both are installed, launching a stale dashboard.
+2. **Never use shell-specific launchers.** No `uname`, `xdg-open`, `open`, `head -1`, or `case` — they break on Windows. Open a bundled file in the browser with the cross-platform one-liner `python -c "import sys,pathlib,webbrowser; webbrowser.open(pathlib.Path(sys.argv[1]).resolve().as_uri())" "<path>"`, which already handles drive letters and spaces.
 
 ## Conventions to preserve
 

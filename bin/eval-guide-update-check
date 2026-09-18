@@ -19,7 +19,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 STATE_DIR="$HOME/.eval-guide"
-REMOTE_URL="https://raw.githubusercontent.com/microsoft/eval-guide/main/VERSION"
+REMOTE_URL="https://raw.githubusercontent.com/serenaxxiee/eval-guide/main/VERSION"
 
 # --- Ensure state directory ---
 mkdir -p "$STATE_DIR"
