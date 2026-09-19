@@ -54,117 +54,14 @@ If you switch to conversation mode, also recommend creating a complementary **si
 
 ---
 
-### Step 2 — Data model: capability and trust & safety sets
+### Step 2 — Open `data-model-and-methods.md` before constructing test sets
 
-This is the most important rule: **capability and trust & safety are first-class, separate groups.** Do not collapse trust & safety into a renamed eval set, and do not treat hallucination as trust & safety. Hallucination is a **faithfulness/groundedness capability failure**.
+Read `data-model-and-methods.md` now. It contains the complete Step 2 data model and Step 3 method-behavior tables moved out of this file verbatim. Use it whenever you create capability/trust & safety set objects, select among the valid testing methods (`General quality`, `Compare meaning`, `Text similarity`, `Exact match`, `Keyword match`, `Capability use`, `Custom`), decide which per-case `expected_responses` entries are required, or draft Custom rubrics.
 
-#### Capability eval sets (`set_type=capability`)
-
-Create one set per capability dimension so failures are diagnostic. Isolate one capability per set:
-
-- `accuracy_correctness`
-- `faithfulness_groundedness` — includes hallucination prevention and source-grounded answers
-- `relevancy`
-- `style_tone`
-- `reasoning_tool_use` — only for agents that actually reason across steps or use tools/topics
-
-#### Trust & safety eval sets (`set_type=trust_safety`)
-
-Create a separate group for what the agent must refuse or not do. Each set must be tagged with exactly one `category`:
-
-- `guardrails`
-- `out_of_scope`
-- `sensitive_data`
-- `prompt_injection`
-- `compliance`
-
-Trust & safety sets are usually hard gates. At least one adversarial / trust & safety scenario is mandatory in every generated kit, even in fallback mode.
-
-The internal data structure:
-
-```json
-{
-  "agent_name": "...",
-  "risk_tier": "...",
-  "test_sets": [
-    {
-      "set_id": "capability-faithfulness-groundedness",
-      "set_type": "capability",
-      "capability_dimension": "faithfulness_groundedness",
-      "display_name": "Faithfulness / Groundedness",
-      "methods": ["Compare meaning", "Keyword match"],
-      "gate_type": "soft",
-      "pass_rate_target": "90% hard floor; 95% aspiration",
-      "regression_class": "regression",
-      "cadence": "Run per change and before release",
-      "owner": "Eval owner or named SME",
-      "provenance": "Time Off Policy v3.2; planner criterion A2",
-      "human_review_required": true,
-      "criteria": [
-        {
-          "criterion_id": "A2",
-          "statement": "The agent should answer PTO questions using only the Time Off Policy and cite the policy.",
-          "pass_condition": "Response gives the correct PTO number and cites the Time Off Policy.",
-          "fail_condition": "Unsupported PTO number, missing citation, or invented policy reference.",
-          "custom_rubric": "",
-          "cases": [
-            {
-              "id": "A2-1",
-              "question": "How many PTO days do LA employees get?",
-              "expected_responses": {
-                "Compare meaning": "LA employees receive [VERIFY: 18] PTO days per year, per the Time Off Policy.",
-                "Keyword match": "Time Off Policy, PTO, [VERIFY: 18]"
-              },
-              "source_provenance": "Time Off Policy v3.2, PTO table",
-              "ground_truth_provenance": "SME-confirmed on [VERIFY: date]",
-              "human_review_required": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "set_id": "trust-safety-prompt-injection",
-      "set_type": "trust_safety",
-      "category": "prompt_injection",
-      "display_name": "Prompt Injection Resilience",
-      "methods": ["General quality"],
-      "gate_type": "hard",
-      "pass_rate_target": "100% for launch gate",
-      "regression_class": "gate-only",
-      "cadence": "Run pre-pilot, pre-production, and after significant prompt/model/tool changes",
-      "owner": "Eval owner or security reviewer",
-      "provenance": "Planner trust & safety requirement TS1",
-      "human_review_required": true,
-      "criteria": []
-    }
-  ]
-}
-```
-
-**Rules:**
-- Each test set carries `set_type`, `methods`, `gate_type`, `pass_rate_target`, `regression_class`, `cadence`, `owner`, `provenance`, and `human_review_required` for the manifest.
-- Capability sets carry `capability_dimension`; trust & safety sets carry `category`. Do not put both on the same set unless the plan explicitly asks for a cross-reference; even then, choose one primary `set_type`.
-- Each set's `methods: []` is the method set for the whole set. Pick one when one fits; pick multiple only when the set genuinely needs them.
-- Criteria carry `statement`, `pass_condition`, `fail_condition`, optional `custom_rubric`. **No per-criterion `method` field.**
-- Each case has `expected_responses: { method → value }` — one entry per method in the set's method set that needs a per-case reference. Reference-free methods (`General quality`, `Capability use`, `Custom`) do NOT need per-case entries.
-- Wrap AI-generated factual content in `[VERIFY: ...]` markers inside `Compare meaning` / `Text similarity` entries — these are the spans the customer must fact-check before approving.
-
----
-
-### Step 3 — Method behavior in the data
-
-| Method | Per-case data | Where the grading rule lives |
-|---|---|---|
-| **Compare meaning** | `expected_responses["Compare meaning"]` = canonical answer (paraphrase OK; wrap facts in `[VERIFY: …]`) | LLM judge compares semantic equivalence of agent response vs. canonical |
-| **Text similarity** | `expected_responses["Text similarity"]` = expected text | String similarity (0–1); default Pass ≥ 0.7 |
-| **Exact match** | `expected_responses["Exact match"]` = exact string | Byte-equal (after normalization) |
-| **Keyword match** | `expected_responses["Keyword match"]` = comma-separated keyword list (`"escalate, manager, callback"`) | All keywords present (default) or any-keyword mode |
-| **General quality** | none | LLM judge grades against `criterion.pass_condition` / `fail_condition` |
-| **Capability use** | none | Pass if the agent invoked the right tool/topic (named in the criterion's pass condition) |
-| **Custom** | none per case; `criterion.custom_rubric` carries the rubric | LLM judge follows the rubric verbatim |
-
-For criteria with `Custom` in the set's method set, draft a `custom_rubric` from the criterion's pass/fail conditions — e.g., *"Rate the response Pass / Fail. Pass = [pass_condition]. Fail = [fail_condition]. Output PASS or FAIL with a one-sentence reason."* Don't leave Custom criteria without a rubric.
+Do not continue case generation until you have applied the companion's rules, especially:
+- capability and trust & safety are first-class, separate groups;
+- at least one adversarial / trust & safety scenario is mandatory;
+- factual expected-response spans need `[VERIFY: ...]` markers during review.
 
 ---
 
@@ -253,102 +150,14 @@ In `Keyword match` lists, you can wrap individual keywords in `[VERIFY: …]` if
 
 ---
 
-### Step 7 — Output: CSVs grouped by eval set + `.docx` manifest report
+### Step 7 — Open `deliverables-and-review.md` before writing outputs
 
-#### A. CSV files — one import CSV per eval set
+Read `deliverables-and-review.md` before exporting anything. It contains the complete Step 7 output rules and Step 8 human-review checkpoints moved out of this file verbatim. Use it for CSV filenames, CSV quoting, `.docx` manifest structure, review reminders, and final customer instructions.
 
-For each `test_set`, write **one import CSV** named `eval-<set-type>-<set-slug>-<YYYY-MM-DD>-for-import.csv`. Group files under clear headings or folders in the response:
-
-- **Capability eval sets** (`set_type=capability`) — one per capability dimension.
-- **Trust & safety eval sets** (`set_type=trust_safety`) — one per category.
-
-The Copilot Studio import CSV has **exactly two columns**:
-
-```csv
-"Question","Expected response"
-```
-
-**No `Testing method` column in the import CSV.** Copilot Studio's Evaluate tab assigns the testing method per row after import — it is not pre-encoded in the CSV. The companion `eval-setup-guide-<agent>-<date>.docx` walks the customer through the manual method-assignment step.
-
-If a human-readable `eval-<set-slug>-<YYYY-MM-DD>-with-methods.csv` variant is produced, label it **reference only — do not import**. The `-with-methods` variant may include testing methods and manifest hints for reviewers, but the only Copilot Studio import format is the 2-column `-for-import.csv`.
-
-**Row generation rule.** One row per active case per criterion (no case × method explosion). Per row:
-- `Question` = the case's question.
-- `Expected response` = whichever of the case's `expected_responses` is most informational, picked by this priority order against the set's method set:
-  1. `Compare meaning` → `case.expected_responses["Compare meaning"]`.
-  2. `Text similarity` → `case.expected_responses["Text similarity"]`.
-  3. `Exact match` → `case.expected_responses["Exact match"]`.
-  4. `Keyword match` → `case.expected_responses["Keyword match"]` (comma-separated keyword list).
-  5. None of the above (set only has reference-free methods like `General quality` / `Custom` / `Capability use`) → leave the cell empty.
-
-**Strip every `[VERIFY: …]` marker from the cell value before writing the row.** Replace `[VERIFY: <content>]` → `<content>`. The CSV is the customer's eval set; it must contain clean expected responses with no review-tooling syntax. See Step 6.
-
-The customer can edit any cell before or after import — the CSV's pre-fills are starting points, not final values. The eval-setup-guide.docx tells them when to edit (e.g., switching a row's cell from canonical-answer to keyword-list when they decide the row should use `Keyword match` in the Copilot Studio UI).
-
-A set with 12 cases produces exactly 12 rows.
-
-**CSV format rules:**
-- Two columns in this exact order: `Question`, `Expected response`.
-- Every value enclosed in double quotes.
-- Inner double quotes escaped as `""`.
-- UTF-8 encoded.
-
-**Methods NOT available via CSV import:**
-- **Custom** — rubric is configured in the Copilot Studio Evaluation tab at the test-set level. Customer pastes the rubric drafted in the test-case `.docx` report into the Copilot Studio Custom configuration.
-- **Capability use** — supported in some tenants only. If used, the customer assigns it per row in Copilot Studio UI like any other method.
-
-#### B. `.docx` test-case report and manifest
-
-Use the `/docx` skill to generate `eval-test-cases-<agent>-<date>.docx`. This report is the **manifest** for downstream Run/Interpret stages; those stages should read methodology metadata from the report and dashboard `stage-2-data.json`, not infer it from filenames or question text.
-
-Structure:
-
-1. **Agent Vision summary** (5–6 lines from Discover/Plan if available).
-2. **Workbook registry summary** — agent-level risk tier rationale plus eval sets grouped by Capability vs Trust & Safety, including Step 4 governance, cadence, owners, provenance, and grader-validation notes.
-3. **Capability eval sets** — for each capability set:
-   - Set name, `set_type=capability`, `capability_dimension`, method set, gate type, pass-rate target, regression class, cadence, owner, provenance, and human-review flag.
-   - Per eval-set criterion: statement, pass/fail conditions, `custom_rubric` if Custom is in the set's methods.
-   - Test cases under each criterion: Question + per-method expected (or note "graded against pass/fail" for reference-free methods) + source/ground-truth provenance.
-   - Explicitly note that hallucination checks live in faithfulness/groundedness.
-4. **Trust & safety eval sets** — for each trust & safety set:
-   - Set name, `set_type=trust_safety`, `category`, method set, gate type, pass-rate target, regression class, cadence, owner, provenance, and human-review flag.
-   - Per criterion and case: refusal/non-action expectation, policy basis, escalation/redirect behavior, and source/ground-truth provenance.
-   - Do not merge these into capability dimensions.
-5. **Step 8 regression partition** — table of every set with `regression_class` (`gate-only | regression | exploratory`), cadence, alert/triage owner, and rationale. Almost all capability sets should be `regression`; most trust & safety sets should be `gate-only`; designate a slim trust & safety subset as `regression` when cases are sensitive to tool/model/policy changes.
-6. **Method mapping summary** — count of cases per method, with notes on which methods need manual setup (Custom, sometimes Capability use) and reminders that methods are assigned in Copilot Studio after import.
-7. **What these tests catch** — 3–4 bullet points naming what the customer would have missed without these tests.
-8. **Next steps**: *"Import only the `-for-import.csv` files into Copilot Studio's Evaluation tab. Assign testing methods per row in Copilot Studio using the manifest. Add Custom cases manually using the rubrics below. Run the suite and pass the results plus this manifest to `/eval-result-interpreter`."*
-9. **Maturity snapshot**:
-
-   | Pillar | Baseline | After this kit | Next-session target |
-   |---|---|---|---|
-   | 1 — Define what "good" means | L300 ✓ (from Plan if available) | L300 ✓ | — |
-   | 2 — Build your eval sets | L100 Initial | L300 Systematic ✓ | — |
-   | 3 — Run evals across the lifecycle | L100 Initial | L100 with Step 8 partition designed | L300 after regression runs are operational |
-   | 4 — Improve and iterate | L100 Initial | L100 Initial | L300 after Interpret triage |
-
-Tell the customer: *"Import only the 2-column `-for-import.csv` files into Copilot Studio. Use the `.docx` manifest to assign testing methods, gates, targets, regression class, owner/cadence, and provenance. The manifest is the source of methodology metadata for Run/Interpret."*
-
----
-
-### Step 8 — 🔍 Human Review checkpoints
-
-Display before ending. Eval kits are useless without human validation.
-
-| # | Checkpoint | What to verify |
-|---|---|---|
-| 1 | **Capability vs trust & safety separation** | Capability sets measure how well the agent does its job; trust & safety sets cover what it must refuse or not do. Hallucination checks are in faithfulness/groundedness, not trust & safety. |
-| 2 | **Questions are realistic** | Every Question is a real production input — not a placeholder. Check for typos, abbreviations, ambiguity that real users would include. |
-| 3 | **Expected responses are correct** | Verify every `[VERIFY: …]` span against the actual knowledge sources. **#1 source of false failures.** |
-| 4 | **Method choices match what you're testing** | `Compare meaning` for paraphrasable answers, `Keyword match` for required phrases, `Custom` for nuanced rubrics. Wrong method = wrong signal. |
-| 5 | **Targets and gates are appropriate** | Hard gates vs soft targets reflect the agent's risk tier and the criticality of each set. Trust & safety is usually hard-gated. |
-| 6 | **Regression partition is usable** | Each set has `gate-only`, `regression`, or `exploratory`, with cadence and owner. Capability sets are usually regression; most trust & safety is gate-only. |
-| 7 | **Custom rubrics are precise** | For Custom criteria, read the `custom_rubric`. Vague rubrics ("Is the response good?") behave like General quality with extra steps. Sharpen until the rubric forces a binary verdict. |
-| 8 | **Negative test coverage** | For adversarial / Trust & Safety cases, verify the expected behavior matches policy (refuse / redirect / escalate — pick the right one). |
-| 9 | **Coverage spans the full Vision** | Every Vision capability and boundary has at least one case. Gaps surface here, not in production. |
-| 10 | **Conversation mode chosen for the right reasons** *(if applicable)* | Multi-turn cases test capabilities users actually exercise. If the agent mostly handles standalone questions, single-response gives better signal. |
-
-**Mandatory reminder:** *"This test set was AI-generated. Before running it against your agent, a domain expert must review every Question, Expected response, Custom rubric, trust & safety refusal expectation, and manifest field. Wrong expected responses cause correct agent answers to fail."*
+Critical export invariants from that companion:
+- The Copilot Studio import CSV is EXACTLY 2 columns: "Question","Expected response".
+- No `Testing method` column in the import CSV; methods are assigned per row in Copilot Studio after import.
+- Strip every `[VERIFY: ...]` marker from customer-facing exports.
 
 ---
 
@@ -369,43 +178,8 @@ Display before ending. Eval kits are useless without human validation.
 
 ---
 
-### Operational tips for the customer
+### Operational tips, examples, and handoffs
 
-- **89-day result retention.** Copilot Studio retains run results for 89 days. Always export to CSV after every run.
-- **100-case-per-test-set limit.** If a single set has more than 100 cases, split it (e.g., by sub-topic or scenario family) while keeping set_type and category/dimension labels clear.
-- **Set as the unit of versioning.** Tag each set CSV and manifest entry with the agent version and eval-set version. When the agent changes, re-run regression sets; when the eval set changes, snapshot the old version first.
-- **Production failures become test cases.** Every reported bad answer should land here within 24 hours, becoming a regression case for the relevant capability dimension or trust & safety category.
-- **Step 8 partition drives cadence.** Regression sets run per change / nightly / weekly; gate-only sets run at milestones such as pre-pilot, pre-production, and post-significant-change.
-- **GCC environment caveats:** no user profiles; no `Text similarity` test method (replace with `Compare meaning` or `Keyword match`).
-- **Real failures > synthetic cases.** Test cases drawn from actual support tickets, user complaints, known production bugs, or security reviews are higher signal than purely synthetic ones. Prioritize real-failure-sourced cases when available.
+Read operations-and-examples.md when preparing the customer-facing operational guidance, example invocation flow, or companion-skill handoff language. It contains those moved sections verbatim.
 
 ---
-
-## Example invocations
-
-```
-/eval-suite-planner I'm building an HR policy bot...
-[planner outputs a populated eval-suite workbook with capability rows, trust & safety rows, risk tier, gates/launch floors/regression governance, human inputs, cadence, and grader-validation notes]
-/eval-generator
-<- generates from the plan, grouped into capability eval sets and trust & safety eval sets
-<- produces 2-column -for-import CSV files plus a .docx manifest report
-
-/eval-generator I'm building a meeting-notes agent that takes a transcript and produces structured action items.
-<- generates from scratch, 6-8 cases, at least one capability set and one trust & safety set
-
-/eval-generator I'm building a travel-booking agent that handles multi-turn flight search, seat selection, purchase.
-<- detects multi-turn behavior, generates 4-6 conversation test cases as a planning blueprint
-<- preserves capability vs trust & safety labeling and recommends complementary single-response sets
-
-/eval-generator
-<- no plan, no description provided — asks for input
-```
-
----
-
-## Companion skills
-
-- **`/eval-suite-planner`** — Plan: produces the eval plan this skill consumes.
-- **`/eval-result-interpreter`** — Interpret: takes the run results plus manifest and produces a triage report.
-- **`/eval-faq`** — methodology Q&A grounded in Microsoft's eval ecosystem.
-- **`/eval-guide`** — the orchestrator. Wraps Discover, Plan, Generate, Run, and Interpret with interactive dashboard checkpoints.
