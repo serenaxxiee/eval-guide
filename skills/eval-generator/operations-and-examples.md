@@ -22,15 +22,22 @@ Open this companion when preparing customer-facing operational guidance, example
 /eval-suite-planner I'm building an HR policy bot...
 [planner outputs a populated eval-suite workbook with capability rows, trust & safety rows, risk tier, gates/launch floors/regression governance, human inputs, cadence, and grader-validation notes]
 /eval-generator
+<- asks once whether to include the agent's instructions
 <- generates from the plan, grouped into capability eval sets and trust & safety eval sets
 <- produces 2-column -for-import CSV files plus a .docx manifest report
 
 /eval-generator I'm building a meeting-notes agent that takes a transcript and produces structured action items.
 <- generates from scratch, 6-8 cases, at least one capability set and one trust & safety set
 
+/eval-generator Here are my agent's instructions: "Always cite the policy section you used. Ask a clarifying
+question when the request is ambiguous. Hand off to a human for anything payroll-related."
+<- instructions already in the conversation, so it does NOT ask again
+<- mines 3 testable instructions and adds one instruction-following set per instruction
+<- each set gets a positive trigger and a negative control
+
 /eval-generator I'm building a travel-booking agent that handles multi-turn flight search, seat selection, purchase.
 <- detects multi-turn behavior, generates 4-6 conversation test cases as a planning blueprint
-<- preserves capability vs trust & safety labeling and recommends complementary single-response sets
+<- preserves capability / trust & safety / instruction-following labeling and recommends complementary single-response sets
 
 /eval-generator
 <- no plan, no description provided — asks for input

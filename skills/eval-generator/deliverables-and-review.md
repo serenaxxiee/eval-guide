@@ -10,8 +10,9 @@ Open this companion before writing CSV files, `.docx` manifest content, or final
 
 For each `test_set`, write **one import CSV** named `eval-<set-type>-<set-slug>-<YYYY-MM-DD>-for-import.csv`. Group files under clear headings or folders in the response:
 
-- **Capability eval sets** (`set_type=capability`) — one per capability dimension.
-- **Trust & safety eval sets** (`set_type=trust_safety`) — one per category.
+- **Capability eval sets** (`set_type=capability`) — one per capability dimension. `eval-capability-<dimension-slug>-<date>-for-import.csv`
+- **Trust & safety eval sets** (`set_type=trust_safety`) — one per category. `eval-trust-safety-<category-slug>-<date>-for-import.csv`
+- **Instruction-following eval sets** (`set_type=instruction_following`) — one per testable instruction. `eval-instruction-following-<instruction-slug>-<date>-for-import.csv`
 
 The Copilot Studio import CSV has **exactly two columns**:
 
@@ -65,11 +66,16 @@ Structure:
    - Set name, `set_type=trust_safety`, `category`, method set, gate type, pass-rate target, regression class, cadence, owner, provenance, and human-review flag.
    - Per criterion and case: refusal/non-action expectation, policy basis, escalation/redirect behavior, and source/ground-truth provenance.
    - Do not merge these into capability dimensions.
-5. **Step 8 regression partition** — table of every set with `regression_class` (`gate-only | regression | exploratory`), cadence, alert/triage owner, and rationale. Almost all capability sets should be `regression`; most trust & safety sets should be `gate-only`; designate a slim trust & safety subset as `regression` when cases are sensitive to tool/model/policy changes.
-6. **Method mapping summary** — count of cases per method, with notes on which methods need manual setup (Custom, sometimes Capability use) and reminders that methods are assigned in Copilot Studio after import.
-7. **What these tests catch** — 3–4 bullet points naming what the customer would have missed without these tests.
-8. **Next steps**: *"Import only the `-for-import.csv` files into Copilot Studio's Evaluation tab. Assign testing methods per row in Copilot Studio using the manifest. Add Custom cases manually using the rubrics below. Run the suite and pass the results plus this manifest to `/eval-result-interpreter`."*
-9. **Maturity snapshot**:
+5. **Agent-specific instruction-following eval sets** — for each instruction-following set:
+   - Set name, `set_type=instruction_following`, the **verbatim `source_instruction`**, `also_covers` if any, method set, gate type, pass-rate target, regression class, cadence, owner, provenance, and human-review flag.
+   - Per case: whether it is a positive trigger or a negative control, and the behavior the grader must see.
+   - Close the section with the instructions you **dropped as untestable** and the one-line reason for each, so the customer can challenge the call.
+   - If no instructions were supplied, keep the section and state the gap: *"No instruction-following sets — the agent's instruction block wasn't provided. These are the sets that catch behaviors specific to how this agent was told to act; re-run `/eval-generator` with the instruction block to add them."*
+6. **Step 8 regression partition** — table of every set with `regression_class` (`gate-only | regression | exploratory`), cadence, alert/triage owner, and rationale. Almost all capability sets should be `regression`; most trust & safety sets should be `gate-only`; instruction-following sets should be `regression`, since they are the first thing a prompt or model change breaks; designate a slim trust & safety subset as `regression` when cases are sensitive to tool/model/policy changes.
+7. **Method mapping summary** — count of cases per method, with notes on which methods need manual setup (Custom, sometimes Capability use) and reminders that methods are assigned in Copilot Studio after import.
+8. **What these tests catch** — 3–4 bullet points naming what the customer would have missed without these tests.
+9. **Next steps**: *"Import only the `-for-import.csv` files into Copilot Studio's Evaluation tab. Assign testing methods per row in Copilot Studio using the manifest. Add Custom cases manually using the rubrics below. Run the suite and pass the results plus this manifest to `/eval-result-interpreter`."*
+10. **Maturity snapshot**:
 
    | Pillar | Baseline | After this kit | Next-session target |
    |---|---|---|---|
@@ -88,7 +94,7 @@ Display before ending. Eval kits are useless without human validation.
 
 | # | Checkpoint | What to verify |
 |---|---|---|
-| 1 | **Capability vs trust & safety separation** | Capability sets measure how well the agent does its job; trust & safety sets cover what it must refuse or not do. Hallucination checks are in faithfulness/groundedness, not trust & safety. |
+| 1 | **Capability vs trust & safety vs instruction-following separation** | Capability sets measure how well the agent does its job; trust & safety sets cover what it must refuse or not do; instruction-following sets check behaviors this agent's own instructions require. Hallucination checks are in faithfulness/groundedness, not trust & safety. No behavior is duplicated across two categories. |
 | 2 | **Questions are realistic** | Every Question is a real production input — not a placeholder. Check for typos, abbreviations, ambiguity that real users would include. |
 | 3 | **Expected responses are correct** | Verify every `[VERIFY: …]` span against the actual knowledge sources. **#1 source of false failures.** |
 | 4 | **Method choices match what you're testing** | `Compare meaning` for paraphrasable answers, `Keyword match` for required phrases, `Custom` for nuanced rubrics. Wrong method = wrong signal. |
@@ -98,6 +104,7 @@ Display before ending. Eval kits are useless without human validation.
 | 8 | **Negative test coverage** | For adversarial / Trust & Safety cases, verify the expected behavior matches policy (refuse / redirect / escalate — pick the right one). |
 | 9 | **Coverage spans the full Vision** | Every Vision capability and boundary has at least one case. Gaps surface here, not in production. |
 | 10 | **Conversation mode chosen for the right reasons** *(if applicable)* | Multi-turn cases test capabilities users actually exercise. If the agent mostly handles standalone questions, single-response gives better signal. |
+| 11 | **Instruction coverage is complete and faithful** *(if instructions were supplied)* | Every enforceable instruction has a set; each `source_instruction` is quoted verbatim, not paraphrased; each set has a negative control; the dropped-as-untestable list is correct. If instructions were **not** supplied, confirm the customer accepts shipping without this category. |
 
 **Mandatory reminder:** *"This test set was AI-generated. Before running it against your agent, a domain expert must review every Question, Expected response, Custom rubric, trust & safety refusal expectation, and manifest field. Wrong expected responses cause correct agent answers to fail."*
 

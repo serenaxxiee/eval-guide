@@ -32,6 +32,7 @@ From the customer's 1–4 sentence description, extract:
 - **Knowledge sources** — sometimes named, often categorized ("official company resources" → SharePoint TBD)
 - **Tone hints** — sometimes explicit ("trusted HR colleague," "efficient")
 - **Personalization hints** — words like "personalized," "your," "based on your role"
+- **Agent instructions** — if the customer pasted or attached the agent's instruction block / system prompt, capture it verbatim as `agent_instructions` in the Vision. It is the only source for the instruction-following eval sets generated in Stage 2. **Don't ask for it here** — Stage 2 asks once, at the point where it changes the output.
 
 If the kickoff is too thin (one sentence with no domain hint), ask **one** clarifying question — *"Two more sentences on what it does and who uses it would help me draft a Vision faster"* — then resume.
 
@@ -83,6 +84,7 @@ Success:        [default 3 criteria]
 Role-based:     [auto-detected: yes/no, with axes]
 Risk tier:      [domain default: HIGH/MEDIUM/LOW] — driven by 5 factors (reach, criticality, autonomy, regulatory, data sensitivity)
 Owner:          [named accountable owner, or "TBD — name before deploy"]
+Instructions:   [captured verbatim if supplied, else "not provided — Generate will ask once"]
 ```
 
 Then: *"This is what I extracted from your description, with safe defaults for [HR/ESS/etc.] domain agents filling the gaps. **Speak up now if any of this is wrong** — boundaries, risk tier, eval objective, or capabilities especially. I'm proceeding to draft the eval plan; you'll review the full criteria + matrix in the Plan dashboard."*

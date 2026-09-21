@@ -136,6 +136,7 @@ Read these when the situation calls for them:
 |---|---|
 | `dashboard-workflow.md` | Before launching any review dashboard (Generate, Interpret) — the serve/feedback contract |
 | `playbook.md` | The canonical 10-step methodology. The spine everything else derives from |
+| `targeted-eval-sets.md` | Before planning or generating any eval set — the canonical catalog of *which* sets to build: the three categories (common capabilities, trust & safety, agent-specific instruction-following), signal-to-dimension mapping, architecture gating, and the "ask for agent instructions" contract |
 | `playbook-crosswalk.md` | Showing the customer how these stages map onto Microsoft's 10 steps |
 | `maturity-model.md` | The canonical 5x5 Per-Agent Eval Maturity Model definitions |
 | `maturity-journey.md` | Framing which pillars/levels this session advances |
@@ -207,6 +208,7 @@ Supports **English** and **Chinese (simplified)**. Auto-detects from user's lang
 - **Maturity-aware coaching** — name which pillar and level each stage advances so customers see the journey, not just the artifacts.
 - Be specific — use real names, real scenarios. No generic advice.
 - Always include at least 1 adversarial/safety eval set or case.
+- **Ask once for the agent's instructions at the start of Generate** — unless Stage 0, the conversation, or the workbook already carries them. It's one question, it never blocks, and it's what makes the kit specific to this agent rather than to its category. Never invent instructions the customer didn't write.
 - Keep everything in the CLI unless asked otherwise.
 - Pause between stages for confirmation.
 - Match the user's language.

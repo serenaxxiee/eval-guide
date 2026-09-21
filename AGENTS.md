@@ -50,6 +50,18 @@ The 10 steps:
 
 The operational stages the toolkit walks a customer through — **Discover, Plan, Generate, Run, Interpret** — are the UX workflow over these steps (Discover=Step 1; Plan=Steps 1,4,5; Generate=Steps 2,3 + Step 8 design; Run=Step 6; Interpret=Steps 7,9 + Step 10 closeout). The **Per-Agent Eval Maturity Model** (5 pillars × 5 levels) in `maturity-model.md` is the outcome scorecard. See the canonical crosswalk in `playbook.md`.
 
+### Which Eval Sets to Generate
+
+The playbook says *what* eval work to do; `skills/eval-guide/targeted-eval-sets.md` is the canonical catalog of *which concrete sets* come out of Steps 2 and 3. Point to that file rather than restating it. Generated sets fall into three categories:
+
+| Category | `set_type` | Source |
+|---|---|---|
+| **Common capabilities** | `capability` | The agent's profile and knowledge sources — accuracy, groundedness & citation, context awareness, relevancy, format adherence, multi-document reasoning, style & tone, tool-use correctness |
+| **Trust & safety** | `trust_safety` | Largely agent-agnostic — out-of-scope, sensitive-data/PII, compliance-scope, guardrails, prompt injection. The strongest Step 10 shared-library candidates |
+| **Agent-specific instruction-following** | `instruction_following` | The agent's own instruction block — one set per testable instruction, so a failure points at the instruction that was ignored |
+
+The third category cannot be generated from the agent's profile, so **Plan and Generate each ask once for the agent's instructions**. One question, never blocking, never bundled with other questions. If the customer skips, generate the first two categories and state the gap; never invent instructions.
+
 ### Architecture-Aware Scoping
 
 | Architecture | What Gets Tested |

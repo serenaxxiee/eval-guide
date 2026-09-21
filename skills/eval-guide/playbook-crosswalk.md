@@ -8,7 +8,7 @@ The toolkit's canonical methodology is **Microsoft's *Practical Guidance on Agen
 |---|---|---|
 | **Discover** | **Step 1** — Plan the eval effort | Name the eval objective, classify the agent's **risk tier** (5 factors), name an owner. Articulate purpose/users/boundaries/success — the eval spec. |
 | **Plan** | **Steps 2–5** (plan side) | Decompose into **capability** eval sets and **trust & safety** eval sets, set **pass-rate targets + hard/soft gates**, specify **human inputs** (rubrics, ground truths, source→ground-truth map). |
-| **Generate** | **Steps 2, 3, 5** (build) + **Step 8** (design) | Produce the capability + trust & safety eval sets (CSVs + manifest); tag each set `gate-only | regression | exploratory` for the regression suite. |
+| **Generate** | **Steps 2, 3, 5** (build) + **Step 8** (design) | Produce the capability, trust & safety, and agent-specific instruction-following eval sets (CSVs + manifest); tag each set `gate-only \| regression \| exploratory` for the regression suite. |
 | **Run** | **Step 6** — Run the baseline | Execute the suite vs the current build; record per-set results with version + timestamp. |
 | **Interpret** | **Step 7** — Iterate to diagnose (+ **Step 9** design) | Classify each failure as eval-setup vs agent-quality; SHIP/ITERATE/BLOCK on gates; design the production optimization loop. |
 | **Closeout** _(folded into the Interpret report)_ | **Step 10** — Reusable assets | Flag reusable rubrics / trust & safety sets for the shared library (Required / Recommended / Opt-in). |

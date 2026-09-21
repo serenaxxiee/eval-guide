@@ -21,7 +21,7 @@ Plan produces a populated Eval Suite Template workbook plus a companion interact
 7. If `status: "confirmed"` → apply the edits, generate final deliverables (docx, CSV), proceed to next stage.
 8. If `status: "changes_requested"` → apply the edits, regenerate the stage data file, re-launch the dashboard. Same loop.
 
-The **orient stage is a pre-built static HTML** (`dashboard/orient-dashboard.html`) — agent-agnostic, no `serve.py`, no JSON write, no feedback file. The skill simply opens the file in the customer's browser and continues the conversation. See *Session Start: Orient* below.
+The **orient stage is a pre-built static HTML** (`dashboard/orient-dashboard.html`) — agent-agnostic, no `serve.py`, no JSON write, no feedback file. The skill simply opens the file in the customer's browser and continues the conversation. See *Session Start: Orient* in `SKILL.md`.
 
 **Review checkpoints:** Plan uses workbook + HTML review. Generate and Interpret use dashboards. Stage 3 (Run) executes tests directly.
 

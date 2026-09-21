@@ -34,9 +34,10 @@ Using the Agent Vision, produce a structured eval suite plan. This works whether
 
 3. **Define eval sets, not scenarios.**
 
-   Populate `2 . Eval Suite Registry` with one row per eval set:
+   Populate `2 . Eval Suite Registry` with one row per eval set, using the three categories in `skills/eval-guide/targeted-eval-sets.md`:
    - **Capability** sets: accuracy/correctness, faithfulness/groundedness, relevancy, style/tone, reasoning/tool use as applicable. Hallucination stays in faithfulness/groundedness.
    - **Trust & Safety** sets: guardrails, out-of-scope handling, sensitive-data handling, prompt injection/jailbreak resilience, compliance-specific behavior as applicable.
+   - **Agent-specific instruction-following** sets: one row per testable instruction, when the Vision carries `agent_instructions`. The template's `Category` dropdown has no third value — map these onto `Capability` (or `Trust & Safety` for routing/refusal obligations), pick the closest `Dimension tested`, quote the instruction verbatim in `Purpose / diagnostic signal`, and record `Set category: Agent-specific instruction-following` in `Notes`. Never edit the dropdowns.
 
    Do not generate legacy planning-artifact rows in the workbook. The registry is one row per eval set only.
 

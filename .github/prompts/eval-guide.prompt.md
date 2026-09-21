@@ -48,7 +48,7 @@ The toolkit is grounded in Microsoft's ***Practical Guidance on Agent Evaluation
 |---|---|---|---|
 | **Stage 0 (Discover)** | Step 1 | Eval objective, agent risk tier (5 factors), named owner — before you even have a working agent | — |
 | **Stage 1 (Plan)** | Steps 1-6 (+ plan of 7, 8, 10) | Populated Eval Suite Template: planning note, eval-set registry, gates/improvement targets, human inputs, grader-validation notes, baseline placeholders, reusable candidates | the eval-suite-planner prompt (see [eval-suite-planner](eval-suite-planner.prompt.md)) |
-| **Stage 2 (Generate)** | Steps 2, 3 (+ Step 8 design) | Build capability eval sets and separate trust & safety eval sets; tag each for the regression partition | the eval-generator prompt (see [eval-generator](eval-generator.prompt.md)) |
+| **Stage 2 (Generate)** | Steps 2, 3 (+ Step 8 design) | Build capability eval sets, separate trust & safety eval sets, and agent-specific instruction-following eval sets; tag each for the regression partition | the eval-generator prompt (see [eval-generator](eval-generator.prompt.md)) |
 | **Stage 3 (Run)** | Step 6 | Run the baseline against a live agent; record version + timestamp | — |
 | **Stage 4 (Interpret)** | Steps 7, 9 (+ Step 10 closeout) | Diagnose each failure (eval-setup vs agent-quality), gate-based verdict, design the optimization loop, flag reusable assets | the eval-result-interpreter prompt (see [eval-result-interpreter](eval-result-interpreter.prompt.md)), the eval-triage-and-improvement prompt (see [eval-triage-and-improvement](eval-triage-and-improvement.prompt.md)) |
 
@@ -104,6 +104,7 @@ Boundaries: [what it must NOT do]
 Success Criteria: [measurable outcomes]
 Role-Based Access: [yes/no — if yes, list roles and what differs]
 Risk Profile: [low / medium / high]
+Agent Instructions: [verbatim instruction block if the customer supplied one, else "not provided — Stage 2 will ask once"]
 ```
 
 Display this and ask: **"Does this capture what you're building? Anything to add?"**
@@ -133,9 +134,10 @@ Using the Agent Vision, populate the Eval Suite Planning & Logging Template. Thi
 
 3. **Define eval sets, not scenarios.**
 
-   Populate `2 . Eval Suite Registry` with one row per eval set:
+   Populate `2 . Eval Suite Registry` with one row per eval set, using the three categories in `skills/eval-guide/targeted-eval-sets.md`:
    - **Capability** sets: accuracy/correctness, faithfulness/groundedness, relevancy, style/tone, reasoning/tool use as applicable. Hallucination stays in faithfulness/groundedness.
    - **Trust & Safety** sets: guardrails, out-of-scope handling, sensitive-data handling, prompt injection/jailbreak resilience, compliance-specific behavior as applicable.
+   - **Agent-specific instruction-following** sets: one row per testable instruction, when the Agent Vision carries `agent_instructions`. The template's `Category` dropdown has no third value — map these onto `Capability` (or `Trust & Safety` for routing/refusal obligations), pick the closest `Dimension tested`, quote the instruction verbatim in `Purpose / diagnostic signal`, and record `Set category: Agent-specific instruction-following` in `Notes`. Never edit the dropdowns.
 
    Do not generate legacy planning-artifact rows in the workbook. The registry is one row per eval set only.
 
@@ -194,6 +196,25 @@ Tell the customer only where to open the workbook and HTML review page. Do not d
 
 Generate test cases as **separate CSV files per eval set** from the workbook registry. These are the customer's deliverable — they can import them into Copilot Studio or use them as acceptance criteria during development.
 
+**Which sets to generate comes from `skills/eval-guide/targeted-eval-sets.md`** — the canonical generation catalog: the three categories (common capabilities, trust & safety, agent-specific instruction-following), the signal-to-dimension mapping, architecture gating, and the workbook mapping. Read it before generating.
+
+### Agent instructions branch — ask this first, before anything else in Stage 2
+
+Two of the three generated categories are predictable from the Agent Vision. The third — **agent-specific instruction-following** — is not. It comes from what this agent was actually told to do, and it's usually the highest-signal part of the kit, because a failure points straight at the instruction the agent ignored. It cannot be generated without the instruction block.
+
+**Check first, then ask.** If Stage 0 captured `agent_instructions`, or the conversation / attachments / workbook `Notes` already carry the instruction block, use it and say so. **Don't ask twice.**
+
+**Otherwise ask exactly one question and wait for the answer:**
+
+> *"Before I generate — want to paste your agent's instructions (the system prompt / instruction block from Copilot Studio)? I'll turn each testable instruction into its own small eval set, so when something fails you know which instruction was ignored. Without them I'll still generate common capability and trust & safety sets, which cover most of the kit."*
+>
+> Options: **Paste the instructions** · **Point me at a file or attachment** · **Skip — generate common sets only**
+
+**If supplied**, mine them with the catalog's testability filter — observable in a bounded response · has a trigger you can write a question for · has a discriminating negative — then confirm the extraction before generating: *"From your instructions I can test N behaviors: [each quoted verbatim]. Dropping M as untestable: [list with reasons]. One eval set per testable instruction, each with a positive trigger and a negative control."*
+
+**If the customer skips**, generate the common categories and name the gap: *"No instruction-following sets — I don't have your agent's instructions. Those are the ones that catch behaviors specific to how you told this agent to act. Re-run Generate with your instruction block whenever you want them."* Carry the gap into the `.docx` manifest and the human-review checklist.
+
+**Never block on this, and never bundle it with other questions.** Never invent instructions the customer didn't write.
 
 ### Choose evaluation mode: Single Response vs. Conversation
 
@@ -221,7 +242,7 @@ Before generating test cases, determine which evaluation mode fits each scenario
 
 ### What to do
 
-1. Generate test cases from each applicable eval-set row in the workbook registry. For conversation eval sets, generate multi-turn test cases with realistic dialogue sequences (up to 6 Q&A pairs).
+1. Generate test cases from each applicable eval-set row in the workbook registry. For conversation eval sets, generate multi-turn test cases with realistic dialogue sequences (up to 6 Q&A pairs). For instruction-following sets, keep them small — 2–4 cases, with at least one positive trigger and one negative control where the behavior should *not* fire.
 
 2. **Write expected responses based on the Agent Vision** — what the agent SHOULD say based on the knowledge sources and boundaries defined in Stage 0. Note: "These expected responses reflect your stated requirements. Refine them once the agent is built and you see how it actually responds."
 
@@ -232,6 +253,7 @@ Before generating test cases, determine which evaluation mode fits each scenario
    - `eval-routing.csv`
    - `eval-robustness.csv`
    - `eval-personalization.csv` (if applicable)
+   - `eval-instruction-following-<instruction-slug>.csv` — one per testable instruction, if instructions were supplied (e.g. `eval-instruction-following-cite-policy-section.csv`)
 
    Only create files for categories that apply.
 
@@ -401,5 +423,6 @@ These are documented at [About agent evaluation](https://learn.microsoft.com/en-
 - **Highlight what they'd miss.** At each stage, point out the scenarios, methods, or insights the customer wouldn't have thought of on their own — hallucination tests, adversarial cases, the "20% are eval bugs" insight.
 - Be specific — use real names, real scenarios. No generic advice.
 - Always include at least 1 adversarial/safety scenario.
+- **Ask once for the agent's instructions at the start of Generate** — unless Stage 0, the conversation, or the workbook already carries them. It's one question, it never blocks, and it's what makes the kit specific to this agent rather than to its category. Never invent instructions the customer didn't write.
 - Pause between stages for confirmation.
 - Match the user's language.

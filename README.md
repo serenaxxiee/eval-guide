@@ -76,12 +76,22 @@ The toolkit walks you through five operational stages over Microsoft's ***Practi
 | Stage | What happens | Playbook steps | Works without a running agent? |
 |-------|-------------|----------------|-------------------------------|
 | **0. Discover** | Articulate what the agent does, what success looks like, the eval objective, the agent's risk tier (5 factors), and the owner | Step 1 | Yes |
-| **1. Plan** | Scope eval depth by agent architecture; plan capability vs trust & safety eval sets; set pass-rate targets and hard/soft gates; specify human inputs + source→ground-truth map | Steps 1, 4, 5 | Yes |
-| **2. Generate & Baseline** | Produce capability and trust & safety test-case CSVs (single-response) or conversation blueprints (multi-turn) importable into Copilot Studio; design the regression partition | Steps 2, 3, 8 (design) | Yes |
+| **1. Plan** | Scope eval depth by agent architecture; plan capability, trust & safety, and agent-specific instruction-following eval sets; set pass-rate targets and hard/soft gates; specify human inputs + source→ground-truth map | Steps 1, 4, 5 | Yes |
+| **2. Generate & Baseline** | Produce capability, trust & safety, and instruction-following test-case CSVs (single-response) or conversation blueprints (multi-turn) importable into Copilot Studio; design the regression partition | Steps 2, 3, 8 (design) | Yes |
 | **3. Run** | Execute the baseline against a live agent | Step 6 | Needs running agent |
 | **4. Interpret & Improve** | Triage results, classify each failure (eval-setup vs agent-quality), gate-based verdict, design the optimization loop, flag reusable assets | Steps 7, 9, 10 | Needs eval results |
 
 Stages 0-2 work from just an agent description — no running agent required.
+
+### The three kinds of eval set you get
+
+| Category | What it covers | Where it comes from |
+|---|---|---|
+| **Common capabilities** | Accuracy, groundedness & citation, context awareness, relevancy, format adherence, multi-document reasoning, style & tone, tool-use correctness | Your agent's profile and knowledge sources |
+| **Trust & safety** | Out-of-scope handling, sensitive data / PII, compliance-scope behavior, guardrails, prompt injection | Largely agent-agnostic — these carry across agents with the least editing |
+| **Agent-specific instruction-following** | One set per testable instruction — *"ask a clarifying question when the request is ambiguous,"* *"always cite the policy section,"* *"hand off anything payroll-related"* | **Your agent's own instructions** |
+
+The first two are predictable from your agent's description. The third isn't — so Plan and Generate each **ask you once whether you want to paste your agent's instructions**. It's optional and never blocks: skip it and you still get the common sets, minus the category that catches behaviors specific to how you told *this* agent to act. The full catalog is in [`skills/eval-guide/targeted-eval-sets.md`](skills/eval-guide/targeted-eval-sets.md).
 
 ## Interactive dashboard review
 

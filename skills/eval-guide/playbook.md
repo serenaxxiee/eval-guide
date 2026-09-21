@@ -38,6 +38,8 @@ Output: a versioned set of capability eval sets, each tagged by dimension and in
 
 Output: a versioned set of trust & safety eval sets, each tagged by category and intended use. Flag non-agent-specific sets for promotion to the shared library (Step 10).
 
+> **Which concrete sets to generate for a given agent** — including the third generated category, *agent-specific instruction-following* (one set per testable instruction from the agent's own instruction block) — is catalogued in `targeted-eval-sets.md`. This playbook defines the method; that file defines the menu. Instruction-following sets are a product of Steps 2 and 3, not a new step: they map onto a capability dimension or a trust & safety category depending on what the instruction requires.
+
 ### Step 4 — Define Gates and Improvement Targets
 An eval set without a defined bar is a measurement, not a gate. The right bar depends on eval type:
 - **Trust & safety sets** use absolute pass-rate gates. Safety failures are categorically unacceptable, so these sets usually carry near-100% hard gates that block deployment.
@@ -140,6 +142,7 @@ Valid testing methods (assigned in the UI): `General quality`, `Compare meaning`
 - Steps 1–5 (Discover/Plan/Generate) work **without a running agent** — description-based mode is the default; live-agent connection is an enhancement.
 - **Architecture-aware scoping** — prompt-level vs RAG vs agentic changes which capability sets apply. Don't generate tool-routing tests for a simple FAQ bot.
 - Every eval plan includes **at least one adversarial / trust-&-safety scenario**.
+- **Ask once for the agent's instructions before generating**, so the agent-specific instruction-following sets can be built. Never block on the answer; never invent instructions the customer didn't supply. Contract in `targeted-eval-sets.md`.
 - **Explain reasoning, don't just emit artifacts** — the customer should learn the methodology.
 - The dashboard is the **review checkpoint** — no `.docx`/`.csv` is generated until the customer confirms.
 
@@ -148,6 +151,7 @@ Valid testing methods (assigned in the UI): `General quality`, `Compare meaning`
 ## Sync rule
 
 When this file changes, propagate to:
+- `skills/eval-guide/targeted-eval-sets.md` (generation catalog — which sets come out of Steps 2/3)
 - `skills/eval-guide/maturity-model.md` (scorecard pillar→step mapping)
 - `skills/eval-guide/SKILL.md` (playbook-mapping section, per-stage callouts, snapshot tables)
 - `skills/eval-guide/USAGE.md`

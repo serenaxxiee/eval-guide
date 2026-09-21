@@ -4,6 +4,8 @@
 
 Generate test cases as **separate CSV files per eval set** from the workbook registry. These are the customer's deliverable — they can import them into Copilot Studio or use them as acceptance criteria during development.
 
+**Which sets to generate comes from `skills/eval-guide/targeted-eval-sets.md`** — the canonical generation catalog. It defines the three categories (common capabilities, trust & safety, agent-specific instruction-following), the signal-to-dimension mapping, architecture gating, and the workbook mapping. Read it before generating.
+
 ### What you walk away with (one kit)
 
 | Artifact | Use it for |
@@ -46,6 +48,26 @@ The kit is one deliverable. CSVs go to Copilot Studio. The test-case .docx goes 
 
 **Note for CSV generation:** Single response test sets use the **2-column import CSV** (`Question`, `Expected response`); the testing method is assigned per row in Copilot Studio's Evaluate tab after import (see the manifest note below). Conversation test sets can be imported via spreadsheet or generated in the Copilot Studio UI — each test case contains a sequence of user messages that simulate a multi-turn interaction.
 
+### Agent instructions branch — ask this first, before anything else in Stage 2
+
+Two of the three generated categories are predictable from the Agent Vision. The third — **agent-specific instruction-following** — is not. It comes from what this agent was actually told to do, and it's usually the highest-signal part of the kit, because a failure points straight at the instruction the agent ignored. It cannot be generated without the instruction block.
+
+**Check first, then ask.** If Stage 0 captured `agent_instructions`, or the conversation / attachments / workbook `Notes` already carry the instruction block, use it and say so. **Don't ask twice.**
+
+**Otherwise ask exactly one question and wait for the answer:**
+
+> *"Before I generate — want to paste your agent's instructions (the system prompt / instruction block from Copilot Studio)? I'll turn each testable instruction into its own small eval set, so when something fails you know which instruction was ignored. Without them I'll still generate common capability and trust & safety sets, which cover most of the kit."*
+>
+> Options: **Paste the instructions** · **Point me at a file or attachment** · **Skip — generate common sets only**
+
+**If supplied**, mine them with the catalog's testability filter — observable in a bounded response · has a trigger you can write a question for · has a discriminating negative — then confirm the extraction before generating:
+
+> *"From your instructions I can test N behaviors: [each quoted verbatim]. Dropping M as untestable: [list with one-line reasons]. I'll generate one eval set per testable instruction, each with a positive trigger and a negative control."*
+
+**If the customer skips**, generate Categories 1 and 2 and name the gap plainly rather than letting it pass silently: *"No instruction-following sets — I don't have your agent's instructions. Those are the ones that catch behaviors specific to how you told this agent to act. Re-run Generate with your instruction block whenever you want them."* Carry the gap into `stage-2-data.json`, the dashboard, the `.docx` manifest, and the human-review checklist.
+
+**Never block on this, and never bundle it with other questions.** One question, one answer, then generate either way. Never invent instructions the customer didn't write.
+
 ### Personalization branch — handle this before generating test cases
 
 If the Agent Vision has `role_based_access: true` (set in Discover), the test cases for personalization criteria need **user profiles** in Copilot Studio. Without profiles, the agent has no context to personalize from — and the test results are misleading.
@@ -80,7 +102,7 @@ When narrating to the customer, say: *"I've wrapped factual claims I'm guessing 
 
 ### What to do
 
-1. Generate one or more test cases per acceptance criterion from the plan. For conversation criteria, generate multi-turn test cases with realistic dialogue sequences (up to 6 Q&A pairs). A single criterion can and often should have multiple test cases exercising different phrasings, user contexts, and edge inputs.
+1. Generate one or more test cases per acceptance criterion from the plan. For conversation criteria, generate multi-turn test cases with realistic dialogue sequences (up to 6 Q&A pairs). A single criterion can and often should have multiple test cases exercising different phrasings, user contexts, and edge inputs. For instruction-following sets, keep them small — 2–4 cases, with at least one positive trigger and one negative control where the behavior should *not* fire.
 
 2. **Write expected responses so they satisfy the criterion's pass condition** — i.e., what the agent SHOULD say according to the Agent Vision, the criterion's statement, and its pass_condition. Note: "These expected responses reflect your stated requirements. Refine them once the agent is built and you see how it actually responds."
 
@@ -91,6 +113,7 @@ When narrating to the customer, say: *"I've wrapped factual claims I'm guessing 
    - `eval-trust-safety-sensitive-data-handling.csv`
    - `eval-trust-safety-prompt-injection-jailbreak.csv`
    - `eval-trust-safety-compliance-specific.csv` (if applicable)
+   - `eval-instruction-following-<instruction-slug>.csv` — one per testable instruction, if instructions were supplied (e.g. `eval-instruction-following-cite-policy-section.csv`)
 
    Only create files for categories that apply.
 
@@ -155,6 +178,33 @@ Before generating final CSV and report files, launch the test cases dashboard fo
              "custom_rubric": ""
            }
          ]
+       },
+       {
+         "eval_set_id": "IF-CLARIFY-001",
+         "display_name": "Instruction: ask a clarifying question when the request is ambiguous",
+         "set_type": "instruction_following",
+         "source_instruction": "Ask a clarifying question when the request is ambiguous.",
+         "also_covers": "Relevancy",
+         "methods": ["General quality"],
+         "gate_type": "Soft target",
+         "target_pass_rate": "Launch floor 85%; regression/direction after baseline",
+         "run_cadence": "Per-change",
+         "cases": [
+           {
+             "id": 2,
+             "question": "How much leave do I have left?",
+             "case_role": "positive trigger — office and tenure are both missing",
+             "expected_responses": {},
+             "custom_rubric": ""
+           },
+           {
+             "id": 3,
+             "question": "How much annual leave does a London employee with 3 years of service get per year?",
+             "case_role": "negative control — nothing is missing, so the agent should answer, not ask",
+             "expected_responses": {},
+             "custom_rubric": ""
+           }
+         ]
        }
      ]
    }
@@ -162,6 +212,8 @@ Before generating final CSV and report files, launch the test cases dashboard fo
 
    Key requirements:
    - Group test cases by workbook eval set, with cases nested directly under each set.
+   - Each test set carries `set_type`: `capability`, `trust_safety`, or `instruction_following`. Instruction-following sets also carry `source_instruction` (the instruction **quoted verbatim**) and optional `also_covers`; their cases carry `case_role` naming positive trigger vs negative control. Every instruction-following set needs at least one of each.
+   - If the customer declined to supply instructions, include `"instruction_following_skipped": true` at the top level so the dashboard and manifest can surface the gap.
    - Each test set carries a `methods: []` array — **the methods for this eval set's CSV**. Choose one method when one fits; choose multiple only when the eval set genuinely needs them. Default to one method.
    - Each test set carries workbook governance metadata (`gate_type`, `target_pass_rate`, `target_rationale`, `run_cadence`, owner/source/grader notes where available).
    - Each case has `expected_responses: { method → value }` — one entry per method in the eval set's `methods` array that needs a per-case reference (`Compare meaning`, `Text similarity`, `Exact match`, `Keyword match`). Methods that grade against a set-level rubric (`General quality`, `Capability use`, `Custom`) do NOT need entries.
@@ -221,8 +273,8 @@ Before generating final CSV and report files, launch the test cases dashboard fo
 
 Report structure:
 1. Agent Vision summary (from Stage 0) — 5-6 lines max
-2. Workbook registry summary — eval sets grouped by Capability vs Trust & Safety, with Step 4 governance and Step 8 cadence
-3. Test cases organized by eval set, with set-level target/gate/regression metadata
+2. Workbook registry summary — eval sets grouped by Capability, Trust & Safety, and Agent-specific instruction-following, with Step 4 governance and Step 8 cadence
+3. Test cases organized by eval set, with set-level target/gate/regression metadata. For instruction-following sets, print the verbatim `source_instruction` above the cases and label each case positive trigger or negative control. Close the category with the instructions dropped as untestable and why — or, if none were supplied, state the gap: *"No instruction-following sets — the agent's instruction block wasn't provided."*
 4. For each test case: Question, Expected Response, and suggested test method. **Strip `[VERIFY: …]` markers** the same way as in the CSV — `[VERIFY: <content>]` → `<content>`. The dashboard's review markers don't belong in the customer-facing report.
 5. Summary table: eval set, category, test case count, methods
 6. "What these tests catch" callout — 3-4 bullet points on what the customer would have missed

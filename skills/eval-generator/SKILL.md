@@ -1,6 +1,6 @@
 ---
 name: eval-generator
-description: Generate standalone — turns the populated Eval Suite Planning workbook (output of `/eval-suite-planner`) into concrete capability eval sets and trust & safety eval sets. Delivers playbook Steps 2 & 3 and designs the Step 8 regression partition. Outputs 2-column Copilot Studio `-for-import.csv` files (Question + Expected response only), a customer-ready `.docx` manifest report, and an `eval-setup-guide.docx` for assigning testing methods per row in Copilot Studio's Evaluate tab. Use after planning, before running.
+description: Generate standalone — turns the populated Eval Suite Planning workbook (output of `/eval-suite-planner`) into concrete capability eval sets, trust & safety eval sets, and agent-specific instruction-following eval sets. Asks once for the agent's instructions so the third category can be tailored. Delivers playbook Steps 2 & 3 and designs the Step 8 regression partition. Outputs 2-column Copilot Studio `-for-import.csv` files (Question + Expected response only), a customer-ready `.docx` manifest report, and an `eval-setup-guide.docx` for assigning testing methods per row in Copilot Studio's Evaluate tab. Use after planning, before running.
 ---
 
 ## Purpose
@@ -9,7 +9,9 @@ This skill produces the **Generate** artifact of the `/eval-guide` lifecycle: im
 
 In the canonical **Practical Guidance on Agent Evaluation: 10-step playbook**, this skill delivers **Step 2 — Build the Capability Eval Sets** and **Step 3 — Build the Trust & Safety Eval Sets**, and it designs the **Step 8 — Regression Suite** partition for those sets. Keep the operational stage name **Generate** as UX scaffolding; use the playbook terms for methodology.
 
-**Primary mode** — the conversation or attachments contain the populated `/eval-suite-planner` workbook (`eval-suite-<agent-name>-<date>.xlsx`). Use `2 . Eval Suite Registry` as the source of truth for eval sets, and `1 . Planning` for risk tier, owners, gates, lifecycle stage, and source dependencies. Generate one set of cases per capability row and one set per trust & safety row. If only a narrative plan is available, use it as a fallback source.
+**Which sets to generate comes from `skills/eval-guide/targeted-eval-sets.md`** — the canonical generation catalog. It defines the three categories of generated set (common capabilities, trust & safety, agent-specific instruction-following), the signal-to-dimension mapping, architecture gating, and the workbook mapping. Read it before generating; do not restate it here.
+
+**Primary mode** — the conversation or attachments contain the populated `/eval-suite-planner` workbook (`eval-suite-<agent-name>-<date>.xlsx`). Use `2 . Eval Suite Registry` as the source of truth for eval sets, and `1 . Planning` for risk tier, owners, gates, lifecycle stage, and source dependencies. Generate one set of cases per capability row and one set per trust & safety row. Rows whose `Notes` contain `Set category: Agent-specific instruction-following` become instruction-following sets, regardless of the `Category` value the template forced them into. If only a narrative plan is available, use it as a fallback source.
 
 **Fallback mode** — no plan in conversation. Accept a plain-English agent description and generate test cases from scratch (6–8 cases minimum), using the same data model and including at least one adversarial / trust & safety scenario.
 
@@ -33,6 +35,28 @@ If no workbook is present, scan the conversation for a legacy narrative planner 
 - **Narrative plan found** → *"Generating test cases from your eval plan (X capability sets and Y trust & safety sets)."* Generate from the plan.
 - **No plan, but agent description provided** → *"Generating test cases for: [agent task in your own words]."* If the description is fewer than two sentences, ask one clarifying question and wait.
 - **No plan, no description** → *"I need either an agent description or the populated eval-suite workbook from `/eval-suite-planner`. Run `/eval-suite-planner <description>` first for the best results."*
+
+---
+
+### Step 0b — Ask for the agent's instructions
+
+Two of the three generated categories are predictable from the agent's profile. The third — **agent-specific instruction-following** — is not: it is derived from what this agent was actually told to do, and it cannot be generated without the agent's instruction block. Ask for it once, explicitly, **before writing any test case**.
+
+**First, check whether you already have them.** Scan the conversation, attachments, the workbook's `1 . Planning` description and registry `Notes`, and any Agent Vision for an instruction block or system prompt. **If it's already there, use it and say so — do not ask.**
+
+**Otherwise ask exactly one question and wait:**
+
+> *"Want to paste your agent's instructions (the system prompt / instruction block from Copilot Studio)? I'll use them to generate a third category of eval sets — one set per testable instruction, so a failure points at the exact instruction the agent ignored. Without them I'll still generate common capability and trust & safety sets, which cover most of the kit."*
+>
+> Options: **Paste the instructions** · **Point me at a file or attachment** · **Skip — generate common sets only**
+
+**If supplied:** mine them using the testability filter in `targeted-eval-sets.md` (observable · has a trigger · has a discriminating negative). Before generating, show what you extracted:
+
+> *"From your instructions I can test N behaviors: [list, each quoted]. I'm dropping M as untestable: [list with one-line reasons — persona flavor, aspirational language, implementation notes]. Generating one eval set per testable instruction."*
+
+**If skipped:** generate Categories 1 and 2 and name the gap plainly — *"Generated common capability and trust & safety sets. No instruction-following sets, because I don't have your agent's instructions — those are the ones that catch behaviors specific to how you told this agent to act. Re-run with your instruction block whenever you want them."* Record the gap in the `.docx` manifest and the human-review checklist so it stays visible.
+
+**Never block on this.** One question, one answer, then generate either way. Do not bundle other questions into it.
 
 ---
 
@@ -72,6 +96,7 @@ Do not continue case generation until you have applied the companion's rules, es
 - **High-risk capability floors** — 3–5 cases per set.
 - **Core capability launch floors** — 2–4 cases per set.
 - **Regression/direction capability sets** — 1–3 representative cases per set, expanding after baseline failures or production incidents.
+- **Instruction-following sets** — 2–4 cases per set: at least one positive trigger and at least one negative control. Keep them small; the diagnostic value comes from having one set per instruction, not from volume inside a set.
 
 For each case:
 - `question` — a realistic input the agent would receive in production. Specific, not a placeholder. Include names, dates, IDs, context a real user would provide.
@@ -83,12 +108,15 @@ For each case:
 
 **Trust & safety coverage:** include at least one set from the relevant categories. For low-risk agents, `out_of_scope` or `prompt_injection` may be enough; for higher risk tiers, add `sensitive_data`, `guardrails`, and/or `compliance` as appropriate.
 
+**Instruction-following coverage:** generate one set per instruction that passed the Step 0b testability filter. If no instructions were supplied, generate none and carry the gap forward to the manifest and the review checklist — do not fabricate instructions the customer never wrote.
+
 **From scratch (no plan):**
 - 6–8 total cases minimum.
 - At least 2 happy-path capability cases.
 - At least 2 edge cases (empty input, long input, ambiguous, malformed).
 - At least 1 adversarial / trust & safety case (prompt injection, out-of-scope request, sensitive-data attempt, policy violation attempt, or compliance refusal as relevant).
 - At least one capability set and one trust & safety set.
+- Plus one instruction-following set per testable instruction, when Step 0b produced instructions.
 
 ---
 
@@ -105,8 +133,8 @@ Use this only when Step 1 selected Conversation mode.
 
 ```
 Conversation Test Case #N: [Scenario Name]
-Set type: [capability / trust_safety]
-Capability dimension or trust & safety category: [dimension/category]
+Set type: [capability / trust_safety / instruction_following]
+Capability dimension, trust & safety category, or source instruction: [dimension/category/verbatim instruction]
 Regression class: [gate-only / regression / exploratory]
 
 Turn 1 — User: [realistic user message]
@@ -130,7 +158,7 @@ Manifest notes: [gate type, pass-rate target, cadence, owner, provenance, human-
 - Agent expected responses describe behavior, not exact wording (the LLM judge handles paraphrasing).
 - Include at least one case where the user's intent shifts or expands across turns.
 - Flag the **critical turn** — the one most likely to fail (e.g., Turn 3 where context from Turn 1 must be retained).
-- Preserve the same capability vs trust & safety separation used for single-response sets.
+- Preserve the same capability / trust & safety / instruction-following separation used for single-response sets. Multi-turn is the natural home for instructions about clarifying questions and handoffs — quote the instruction verbatim in the blueprint.
 
 **Conversation test sets cannot be CSV-imported.** They must be created in Copilot Studio via Quick conversation set, Full conversation set, Test chat → test set, or Manual entry. The output of this skill in conversation mode serves as a **planning blueprint** the customer uses to drive manual entry — call this out explicitly.
 
