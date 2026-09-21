@@ -1,6 +1,6 @@
 {
   "name": "eval-guide",
-  "version": "1.1.0",
+  "version": "1.2.2",
   "description": "AI agent evaluation toolkit for Copilot Studio. Plan evals, generate test cases, interpret results, and triage failures — grounded in Microsoft's Eval Scenario Library and Triage & Improvement Playbook.",
   "author": {
     "name": "Serena Xie",

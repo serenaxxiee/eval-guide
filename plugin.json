@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "eval-guide",
-  "version": "1.1.0",
+  "version": "1.2.2",
   "description": "AI agent evaluation toolkit for Copilot Studio. Plan evals, generate test cases, run them, interpret results, and triage failures — grounded in Microsoft's Practical Guidance on Agent Evaluation (10-step playbook), Eval Scenario Library, and Triage & Improvement Playbook.",
   "author": {
     "name": "Serena Xie",
